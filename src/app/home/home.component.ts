@@ -67,6 +67,10 @@ export class HomeComponent implements OnInit {
     }
   }
 
+  onEnded(){
+    this.playNextSong();
+  }
+
   playNextSong(): void {
     const nextSongIndex = this.songs.findIndex((song) => song.id === this.activeSong.id + 1);
 

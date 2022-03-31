@@ -72,4 +72,4 @@
   </div>
 </div>
 
-<audio #player preload="none" (timeupdate)="onTimeUpdate()" (pause)="onPause()"></audio>
+<audio #player preload="none" (timeupdate)="onTimeUpdate()" (pause)="onPause()" (ended)="onEnded()"></audio>
