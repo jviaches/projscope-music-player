@@ -1,6 +1,5 @@
 export interface ISong {
-    id: number;
-    title: string;
-    path: string;
-  }
-  
+  id: number;
+  title: string;
+  path: string;
+}

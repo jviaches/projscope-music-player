@@ -9,7 +9,7 @@
 
 <div class="wrapper" style="-webkit-app-region: drag">
   <div class="player">
-    <div class="cover" [ngStyle]="{animation:isPlaying?'rotation 3s infinite linear':''}" ></div>
+    <div class="cover" [ngStyle]="{animation:isPlaying?'rotation 3s infinite linear':''}"></div>
     <div class="song-info">
       <div class="band">{{ activeSong?.title }}</div>
       <button class="small-control" style="-webkit-app-region: no-drag" (click)="togglePlayList()">
@@ -49,10 +49,9 @@
       </div>
       <div class="progress-area">
         <div #progressBar class="progress-bar" role="progressbar"
-        [ngStyle]="{'width': (currentProgress$ | async) + '%'}"
-        [attr.aria-valuenow]="(currentProgress$ | async) "
-        aria-valuemin="0" aria-valuemax="100">
-        </div> 
+          [ngStyle]="{'width': (currentProgress$ | async) + '%'}" [attr.aria-valuenow]="(currentProgress$ | async) "
+          aria-valuemin="0" aria-valuemax="100">
+        </div>
       </div>
     </div>
     <div *ngIf="isPlayListOpened === true" class="playlist" style="-webkit-app-region: no-drag">

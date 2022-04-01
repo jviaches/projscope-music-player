@@ -60,16 +60,12 @@ export class HomeComponent implements OnInit {
     const songIndex = this.songs.findIndex((song) => song.id === songId);
     this.songs.splice(songIndex, 1);
 
-    console.log('deleteSongFromPlaylist');
-    
     // if deleted song is an active one
-    if(this.activeSong.id === songId)
-    {
+    if (this.activeSong.id === songId) {
       this.resetSong(this.songs[0]);
 
-      if(this.songs.length !== 0)
-      {
-        this.setSongDuration();  
+      if (this.songs.length !== 0) {
+        this.setSongDuration();
       }
     }
   }
@@ -90,7 +86,7 @@ export class HomeComponent implements OnInit {
     }
   }
 
-  onEnded(){
+  onEnded() {
     this.playNextSong();
   }
 
@@ -156,12 +152,12 @@ export class HomeComponent implements OnInit {
   playRandomSong() {
 
     let randomSong = Math.floor(Math.random() * this.songs.length);
-    
+
     while (this.activeSong.id === this.songs[randomSong].id) {
       randomSong = Math.floor(Math.random() * this.songs.length);
-    }    
+    }
 
-    this.playSong(this.songs[randomSong]);        
+    this.playSong(this.songs[randomSong]);
   }
 
   rePlay() {
