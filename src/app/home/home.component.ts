@@ -189,8 +189,15 @@ export class HomeComponent implements OnInit {
     this.isPlayListOpened = !this.isPlayListOpened;
   }
 
-  playRandom() {
-    console.log('playRandom');
+  playRandomSong() {
+
+    let randomSong = Math.floor(Math.random() * this.songs.length);
+    
+    while (this.activeSong.id === this.songs[randomSong].id) {
+      randomSong = Math.floor(Math.random() * this.songs.length);
+    }    
+
+    this.playSong(this.songs[randomSong]);        
   }
 
   rePlay() {
