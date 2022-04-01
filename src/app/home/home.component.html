@@ -12,7 +12,8 @@
     <div class="cover" [ngStyle]="{animation:isPlaying?'rotation 3s infinite linear':''}"></div>
     <div class="song-info">
       <div class="band">{{ activeSong?.title }}</div>
-      <button class="small-control" style="-webkit-app-region: no-drag" (click)="togglePlayList()">
+      <button class="small-control" style="-webkit-app-region: no-drag" (click)="togglePlayList()"
+      [ngStyle]="{'color': isPlayListOpened ? 'var(--theme-color)' : ''}">
         <i class="fa fa-ellipsis-h"></i>
       </button>
     </div>
@@ -31,12 +32,14 @@
       </button>
       <ul class="control-options">
         <li>
-          <button class="small-control" (click)="playRandomSong()" [disabled]="this.songs.length < 2">
+          <button class="small-control" (click)="playRandomSong()" [disabled]="this.songs.length < 2"
+            [ngStyle]="{'color': isPlayListOpened ? 'var(--theme-color)' : ''}">
             <i class="fa fa-random"></i>
           </button>
         </li>
         <li>
-          <button class="small-control" (click)="rePlay()">
+          <button class="small-control" (click)="setRepeatMode()"
+          [ngStyle]="{'color': isRepeatModeOn ? 'var(--theme-color)' : ''}">
             <i class="fa fa-undo"></i>
           </button>
         </li>

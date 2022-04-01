@@ -21,6 +21,8 @@ export class HomeComponent implements OnInit {
   durationTime: string;
 
   isPlayListOpened = false;
+  isShuffleModeOn = false;
+  isRepeatModeOn = false;
 
   constructor() { }
 
@@ -150,6 +152,12 @@ export class HomeComponent implements OnInit {
   }
 
   playRandomSong() {
+
+    if (this.isPlayListOpened) {
+      this.isPlayListOpened = !this.isPlayListOpened;
+      return;
+    }
+
     let randomSong = Math.floor(Math.random() * this.songs.length);
 
     while (this.activeSong.id === this.songs[randomSong].id) {
@@ -157,10 +165,11 @@ export class HomeComponent implements OnInit {
     }
 
     this.playSong(this.songs[randomSong]);
+    this.isPlayListOpened = true;
   }
 
-  rePlay() {
-    console.log('rePlay');
+  setRepeatMode() {
+    this.isRepeatModeOn = !this.isRepeatModeOn;
   }
 
   private resetSong(song: ISong) {
