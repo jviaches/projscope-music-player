@@ -52,8 +52,8 @@ test.describe('Check Home Page', async () => {
   //   expect(text).toBe('App works !');
   // });
 
-  test.afterAll( async () => {
-    await context.tracing.stop({ path: 'e2e/tracing/trace.zip' });
-    await app.close();
-  });
+  // test.afterAll( async () => {
+  //   await context.tracing.stop({ path: 'e2e/tracing/trace.zip' });
+  //   await app.close();
+  // });
 });
