@@ -41,22 +41,46 @@ export class HomeComponent implements OnInit {
       return;
     }
 
+    this.resetSong(song);
+
+    this.player.nativeElement.play();
+    this.isPlaying = true;
+  }
+
+  private resetSong(song: ISong) {
     this.durationTime = undefined;
     this.audio.pause();
 
-    this.player.nativeElement.src = song.path;
+    this.player.nativeElement.src = song?.path;
     this.player.nativeElement.load();
-    this.player.nativeElement.play();
     this.activeSong = song;
-    this.isPlaying = true;
+    this.isPlaying = false;
   }
 
   playSongFromPlaylist(songId: number): void {
 
-    const nextSongIndex = this.songs.findIndex((song) => song.id === songId);
+    const songIndex = this.songs.findIndex((song) => song.id === songId);
 
-    if (nextSongIndex !== -1) {
+    if (songIndex !== -1) {
       this.playSong(this.songs[songId]);
+    }
+  }
+
+  deleteSongFromPlaylist(songId: number): void {
+    const songIndex = this.songs.findIndex((song) => song.id === songId);
+    this.songs.splice(songIndex, 1);
+
+    console.log('deleteSongFromPlaylist');
+    
+    // if deleted song is an active one
+    if(this.activeSong.id === songId)
+    {
+      this.resetSong(this.songs[0]);
+
+      if(this.songs.length != 0)
+      {
+        this.setSongDuration();  
+      }
     }
   }
 
@@ -82,8 +106,6 @@ export class HomeComponent implements OnInit {
 
   playNextSong(): void {
     const nextSongIndex = this.songs.findIndex((song) => song.id === this.activeSong.id + 1);
-
-    console.log('Next song Id: ' + nextSongIndex);
 
     if (nextSongIndex === -1) {
       this.playSong(this.songs[0]);

@@ -57,12 +57,12 @@
     </div>
     <div *ngIf="isPlayListOpened === true" class="playlist" style="-webkit-app-region: no-drag">
       <ul class="playListItems">
-        <li *ngFor="let song of songs; let i = index" (click)="playSongFromPlaylist(song.id)">
+        <li *ngFor="let song of songs; let i = index">
           <div class="plItem">
             <span class="plNum">{{i+1 | number : '2.0-0'}}</span>
-            <span class="plTitle">{{song.title}}</span>
+            <span class="plTitle" (click)="playSongFromPlaylist(song.id)">{{song.title}}</span>
             <!-- <span class="plLength">2:46</span> -->
-            <span class="plRemove">
+            <span class="plRemove" (click)="deleteSongFromPlaylist(song.id)">
               <i class="fa fa-trash"></i>
             </span>
           </div>
