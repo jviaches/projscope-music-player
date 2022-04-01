@@ -57,7 +57,7 @@
     </div>
     <div *ngIf="isPlayListOpened === true" class="playlist" style="-webkit-app-region: no-drag">
       <ul class="playListItems">
-        <li *ngFor="let song of getListOfSongs(); let i = index">
+        <li *ngFor="let song of songs; let i = index" (click)="playSongFromPlaylist(song.id)">
           <div class="plItem">
             <span class="plNum">{{i+1 | number : '2.0-0'}}</span>
             <span class="plTitle">{{song.title}}</span>

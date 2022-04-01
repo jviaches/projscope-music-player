@@ -51,6 +51,15 @@ export class HomeComponent implements OnInit {
     this.isPlaying = true;
   }
 
+  playSongFromPlaylist(songId: number): void {
+
+    const nextSongIndex = this.songs.findIndex((song) => song.id === songId);
+
+    if (nextSongIndex !== -1) {
+      this.playSong(this.songs[songId]);
+    }
+  }
+
   onTimeUpdate() {
     if (!this.durationTime) {
       this.setSongDuration();
@@ -127,38 +136,34 @@ export class HomeComponent implements OnInit {
   getListOfSongs(): ISong[] {
     return [
       {
-        id: 1,
+        id: 0,
         title: 'music_1.mp3',
         path: './assets/music/music_1.mp3'
       },
       {
-        id: 2,
+        id: 1,
         title: 'music_2.mp3',
         path: './assets/music/music_2.mp3'
       },
       {
-        id: 3,
+        id: 2,
         title: 'music_3.mp3',
         path: './assets/music/music_3.mp3'
       },
       {
-        id: 64,
+        id: 3,
         title: 'music_4.mp3',
         path: './assets/music/music_4.mp3'
       },
       {
-        id: 5,
+        id: 4,
         title: 'music_5.mp3',
         path: './assets/music/music_5.mp3'
       }
-
-
-
     ];
   }
 
   togglePlayList() {
-    console.log(this.isPlayListOpened);
     this.isPlayListOpened = !this.isPlayListOpened;
   }
 
