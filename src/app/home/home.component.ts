@@ -9,7 +9,7 @@ import { ISong } from '../models/song.model';
 })
 export class HomeComponent implements OnInit {
 
-  @ViewChild('player', { static: true }) player: ElementRef
+  @ViewChild('player', { static: true }) player: ElementRef;
 
   currentProgress$ = new BehaviorSubject(0);
   currentTime$ = new Subject();
