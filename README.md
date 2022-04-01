@@ -1,6 +1,17 @@
 # Introduction
 Cross platform media player.
 
+![image](https://camo.githubusercontent.com/2a5fce6001dad9f9581fbc18d2449c020278698a9b80432052af16d2625f6b1d/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f6d61696e7461696e65642d7965732d627269676874677265656e)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com)
+[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/jviaches/projscope-music-player/issues)
+
+
+![Windows flow](https://github.com/jviaches/projscope-music-player/actions/workflows/windows.yml/badge.svg)
+![Linux flow](https://github.com/jviaches/projscope-music-player/actions/workflows/ubuntu.yml/badge.svg)
+![Mac flow](https://github.com/jviaches/projscope-music-player/actions/workflows/macos.yml/badge.svg)
+
+
+
 ![image](https://user-images.githubusercontent.com/1269552/161130816-9af13350-ae78-433f-bdc7-eebae8769fbf.png)
 
 # Technology stack
