@@ -1,7 +1,5 @@
 @import url(https://fonts.googleapis.com/css?family=Cabin);
 
-$theme-color: #f86d92;
-
 .wrapper {
   position: absolute;
   width: 430px;
@@ -14,7 +12,7 @@ $theme-color: #f86d92;
   flex-direction: column;
   border-radius: 20px;
   border-color: black;
-  background-color: #fff;
+  background-color: var(--background-color);
   padding: 14px;
   width: 400px;
 }
@@ -28,8 +26,8 @@ $theme-color: #f86d92;
   left: -50px;
   width: 120px;
   height: 120px;
-  background-color: #fff;
-  box-shadow: 0 0 0 10px #fff;
+  background-color: var(--background-color);
+  box-shadow: 0 0 0 10px var(--background-color);
   border-radius: 50%;
 }
 
@@ -37,6 +35,7 @@ $theme-color: #f86d92;
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(359deg);
   }
@@ -57,33 +56,34 @@ $theme-color: #f86d92;
 
 .small-control {
   cursor: pointer;
-  background-color: #fff;
+  background-color: var(--background-color);
   border-style: hidden;
-  color: #d6dee7;
+  color: var(--control-active-color);
 
   &:hover {
-    color: $theme-color;
+    color: var(--theme-color);
   }
 }
+
 .control {
   height: 60px;
   width: 60px;
   border-style: hidden;
   margin: 0px 10px;
   padding: 20px;
-  background-color: #fff;
+  background-color: var(--background-color);
   cursor: pointer;
 
   & i {
     display: block;
-    color: #d6dee7;
+    color: var(--control-active-color);
     font-size: 26px;
     text-align: center;
     line-height: 1;
-    background-color: #fff;
+    background-color: var(--background-color);
 
     &:hover {
-      color: $theme-color;
+      color: var(--theme-color);
     }
   }
 }
@@ -94,14 +94,6 @@ ul {
 
   & li {
     font-size: 14px;
-  }
-
-  &.playListItems li {
-    padding-top: 20px;
-  }
-
-  &.playListItems li:hover {
-    color: blue;
   }
 }
 
@@ -131,7 +123,7 @@ ul {
 }
 
 .progress-area {
-  background-color: #ffe8ee;
+  background-color: var(--theme-color-secondary);
   cursor: pointer;
 }
 
@@ -142,14 +134,14 @@ ul {
   bottom: 0;
   left: 0;
   width: 0;
-  background-color: #f86d92;
+  background-color: var(--theme-color);
   transition: 0.2s ease width;
   z-index: 1;
 }
 
 .playlist {
   height: 400px;
-  background-color: #fff;
+  background-color: var(--background-color);
   margin-bottom: 20px;
   padding: 0;
 }
@@ -158,14 +150,16 @@ ul {
   cursor: pointer;
   display: block;
   margin: 0;
-}
-
-.playList li:hover {
-  background-color: rgba(0, 0, 0, 0.1);
+  color: var(--control-non-active-color);
 }
 
 .plItem {
   position: relative;
+  color: var(--control-active-color);
+
+  &:hover {
+    color: var(--theme-color);
+  }
 }
 
 .plTitle {
@@ -190,5 +184,14 @@ ul {
 }
 
 .plRemove {
- padding-left: 340px;
+  padding-left: 340px;
+}
+
+button[disabled] {
+  color: var(--control-non-active-color);
+  cursor: context-menu;
+
+  &:hover {
+    color: var(--control-non-active-color);
+  }
 }
