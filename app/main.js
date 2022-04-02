@@ -47,7 +47,6 @@ function createWindow() {
     }
     win.webContents.on("ipc-message", function (event, input, args) {
         if (input === "minimize-app") {
-            // bypass all listeners
             win.minimize();
         }
         if (input === "close-app") {

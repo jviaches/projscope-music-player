@@ -44,13 +44,13 @@ export class ElectronService {
 
   closeProgram() {
     if (this.isElectron) {
-      this.ipcRenderer.send("close-app", true);
+      this.ipcRenderer.send('close-app', true);
     }
   }
 
   minimizeProgram() {
     if (this.isElectron) {
-      this.ipcRenderer.send("minimize-app", true);
+      this.ipcRenderer.send('minimize-app', true);
     }
   }
 }

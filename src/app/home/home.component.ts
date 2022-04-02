@@ -90,7 +90,11 @@ export class HomeComponent implements OnInit {
   }
 
   onEnded() {
-    this.playNextSong();
+    if (this.isShuffleModeOn) {
+      this.playRandomSong();
+    } else {
+      this.playNextSong();  
+    }
   }
 
   playNextSong(): void {
@@ -152,13 +156,11 @@ export class HomeComponent implements OnInit {
     this.isPlayListOpened = !this.isPlayListOpened;
   }
 
+  toggleShuffleMode() {
+    this.isShuffleModeOn = !this.isShuffleModeOn;
+  }
+
   playRandomSong() {
-
-    if (this.isPlayListOpened) {
-      this.isPlayListOpened = !this.isPlayListOpened;
-      return;
-    }
-
     let randomSong = Math.floor(Math.random() * this.songs.length);
 
     while (this.activeSong.id === this.songs[randomSong].id) {
@@ -166,7 +168,6 @@ export class HomeComponent implements OnInit {
     }
 
     this.playSong(this.songs[randomSong]);
-    this.isPlayListOpened = true;
   }
 
   setRepeatMode() {

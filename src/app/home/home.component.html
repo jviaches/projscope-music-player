@@ -42,8 +42,8 @@
           </button>
         </li>
         <li>
-          <button class="small-control" (click)="playRandomSong()" [disabled]="this.songs.length < 2"
-            [ngStyle]="{'color': isPlayListOpened ? 'var(--theme-color)' : ''}">
+          <button class="small-control" (click)="toggleShuffleMode()" [disabled]="this.songs.length < 2"
+            [ngStyle]="{'color': isShuffleModeOn ? 'var(--theme-color)' : ''}">
             <i class="fa fa-random"></i>
           </button>
         </li>
