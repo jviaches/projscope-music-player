@@ -12,10 +12,14 @@
     <div class="cover" [ngStyle]="{animation:isPlaying?'rotation 3s infinite linear':''}"></div>
     <div class="song-info">
       <div class="band">{{ activeSong?.title }}</div>
-      <button class="small-control" style="-webkit-app-region: no-drag" (click)="togglePlayList()"
-      [ngStyle]="{'color': isPlayListOpened ? 'var(--theme-color)' : ''}">
-        <i class="fa fa-ellipsis-h"></i>
-      </button>
+      <div>
+        <button class="small-control" style="-webkit-app-region: no-drag" (click)="minimizeProgram()">
+          <i class="fa fa-window-minimize"></i>
+        </button>
+        <button class="small-control" style="-webkit-app-region: no-drag" (click)="closeProgram()">
+          <i class="fa fa-window-close"></i>
+        </button> 
+      </div>
     </div>
     <div class="controls" style="-webkit-app-region: no-drag">
       <button class="control prev" (click)="playPreviousSong()">
@@ -31,6 +35,12 @@
         <i class="fa fa-step-forward"></i>
       </button>
       <ul class="control-options">
+        <li>
+          <button class="small-control" style="-webkit-app-region: no-drag" (click)="togglePlayList()"
+          [ngStyle]="{'color': isPlayListOpened ? 'var(--theme-color)' : ''}">
+            <i class="fa fa-ellipsis-h"></i>
+          </button>
+        </li>
         <li>
           <button class="small-control" (click)="playRandomSong()" [disabled]="this.songs.length < 2"
             [ngStyle]="{'color': isPlayListOpened ? 'var(--theme-color)' : ''}">

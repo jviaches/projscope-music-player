@@ -41,4 +41,16 @@ export class ElectronService {
   get isElectron(): boolean {
     return !!(window && window.process && window.process.type);
   }
+
+  closeProgram() {
+    if (this.isElectron) {
+      this.ipcRenderer.send("close-app", true);
+    }
+  }
+
+  minimizeProgram() {
+    if (this.isElectron) {
+      this.ipcRenderer.send("minimize-app", true);
+    }
+  }
 }

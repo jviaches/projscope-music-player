@@ -51,6 +51,17 @@ function createWindow(): BrowserWindow {
     }));
   }
 
+  win.webContents.on("ipc-message", (event, input, args) => {
+    if (input === "minimize-app") {
+      win.minimize();
+    }
+
+    if (input === "close-app") {
+      // bypass all listeners
+      app.exit(0);
+    }
+  });
+
   // Emitted when the window is closed.
   win.on('closed', () => {
     // Dereference the window object, usually you would store window

@@ -1,5 +1,6 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
+import { ElectronService } from '../core/services';
 import { ISong } from '../models/song.model';
 
 @Component({
@@ -24,7 +25,7 @@ export class HomeComponent implements OnInit {
   isShuffleModeOn = false;
   isRepeatModeOn = false;
 
-  constructor() { }
+  constructor(private electronService: ElectronService) { }
 
   ngOnInit() {
     this.songs = this.getListOfSongs();
@@ -170,6 +171,14 @@ export class HomeComponent implements OnInit {
 
   setRepeatMode() {
     this.isRepeatModeOn = !this.isRepeatModeOn;
+  }
+
+  closeProgram(){
+    this.electronService.closeProgram();
+  }
+
+  minimizeProgram(){
+    this.electronService.minimizeProgram();
   }
 
   private resetSong(song: ISong) {

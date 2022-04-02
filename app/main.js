@@ -45,6 +45,16 @@ function createWindow() {
             slashes: true
         }));
     }
+    win.webContents.on("ipc-message", function (event, input, args) {
+        if (input === "minimize-app") {
+            // bypass all listeners
+            win.minimize();
+        }
+        if (input === "close-app") {
+            // bypass all listeners
+            electron_1.app.exit(0);
+        }
+    });
     // Emitted when the window is closed.
     win.on('closed', function () {
         // Dereference the window object, usually you would store window
