@@ -11,8 +11,8 @@ function createWindow() {
     win = new electron_1.BrowserWindow({
         x: 0,
         y: 0,
-        width: 630,
-        height: 600,
+        width: 500,
+        height: 170,
         webPreferences: {
             nodeIntegration: true,
             allowRunningInsecureContent: (serve) ? true : false,
@@ -20,6 +20,7 @@ function createWindow() {
         },
         titleBarStyle: 'hiddenInset',
         frame: false,
+        resizable: false,
         transparent: true,
         minimizable: false,
         maximizable: false,
@@ -46,10 +47,15 @@ function createWindow() {
         }));
     }
     win.webContents.on("ipc-message", function (event, input, args) {
-        if (input === "minimize-app") {
+        if (input === "resize-app") {
+            win.resizable = true;
+            win.setSize(win.getSize()[0], args);
+            win.resizable = false;
+        }
+        if (input === 'minimize-app') {
             win.minimize();
         }
-        if (input === "close-app") {
+        if (input === 'close-app') {
             // bypass all listeners
             electron_1.app.exit(0);
         }

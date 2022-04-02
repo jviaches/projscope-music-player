@@ -2,9 +2,9 @@
 
 .wrapper {
   position: absolute;
-  width: 430px;
-  height: 400px;
+  width: 430px;  
   margin: 10px 60px;
+  -webkit-app-region: no-drag;
 }
 
 .player {

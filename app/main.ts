@@ -13,19 +13,20 @@ function createWindow(): BrowserWindow {
   win = new BrowserWindow({
     x: 0,
     y: 0,
-    width: 630,
-    height: 600,
+    width: 500,
+    height: 170,
     webPreferences: {
       nodeIntegration: true,
       allowRunningInsecureContent: (serve) ? true : false,
       contextIsolation: false,  // false if you want to run e2e test with Spectron
-    },
+    },    
     titleBarStyle: 'hiddenInset',
     frame: false,
+    resizable: false,
     transparent: true,
-    minimizable : false,
-    maximizable : false,
-    closable :false
+    minimizable: false,
+    maximizable: false,
+    closable: false
   });
 
 
@@ -40,7 +41,7 @@ function createWindow(): BrowserWindow {
     let pathIndex = './index.html';
 
     if (fs.existsSync(path.join(__dirname, '../dist/index.html'))) {
-       // Path when running electron in local folder
+      // Path when running electron in local folder
       pathIndex = '../dist/index.html';
     }
 
@@ -52,11 +53,18 @@ function createWindow(): BrowserWindow {
   }
 
   win.webContents.on("ipc-message", (event, input, args) => {
-    if (input === "minimize-app") {
+
+    if (input === "resize-app") {
+      win.resizable = true;      
+      win.setSize(win.getSize()[0], args);
+      win.resizable = false;
+    }
+
+    if (input === 'minimize-app') {
       win.minimize();
     }
 
-    if (input === "close-app") {
+    if (input === 'close-app') {
       // bypass all listeners
       app.exit(0);
     }

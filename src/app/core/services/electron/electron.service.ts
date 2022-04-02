@@ -53,4 +53,10 @@ export class ElectronService {
       this.ipcRenderer.send('minimize-app', true);
     }
   }
+
+  windowsResize(heigh: number) {
+    if (this.isElectron) {
+      this.ipcRenderer.send('resize-app', heigh);
+    }
+  }
 }

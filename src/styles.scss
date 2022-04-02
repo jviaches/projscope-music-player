@@ -6,6 +6,10 @@ body {
   background-color: transparent;
 }
 
+::-webkit-scrollbar {
+  display: none;
+}
+
 *:focus {
   outline: none;
 }

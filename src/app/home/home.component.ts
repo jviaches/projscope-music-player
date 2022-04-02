@@ -154,6 +154,12 @@ export class HomeComponent implements OnInit {
 
   togglePlayList() {
     this.isPlayListOpened = !this.isPlayListOpened;
+
+    if (this.isPlayListOpened) {
+      this.electronService.windowsResize(600);
+    } else {
+      this.electronService.windowsResize(170);
+    }
   }
 
   toggleShuffleMode() {
