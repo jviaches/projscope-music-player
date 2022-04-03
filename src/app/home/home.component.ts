@@ -1,7 +1,7 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { ElectronService } from '../core/services';
-import { ISong } from '../models/song.model';
+import { Song } from '../models/song.model';
 
 @Component({
   selector: 'app-home',
@@ -14,31 +14,41 @@ export class HomeComponent implements OnInit {
 
   currentProgress$ = new BehaviorSubject(0);
   currentTime$ = new Subject();
-  songs: ISong[] = [];
+  songs: Song[] = [];
 
   audio = new Audio();
   isPlaying = false;
-  activeSong: ISong;;
+  activeSong: Song;;
   durationTime: string;
 
   isPlayListOpened = false;
   isShuffleModeOn = false;
   isRepeatModeOn = false;
 
-  constructor(private electronService: ElectronService) { }
+  constructor(public electronService: ElectronService) { }
 
   ngOnInit() {
-    this.songs = this.getListOfSongs();
+    this.electronService.mediaSources.subscribe(receivedMedia => {
 
-    this.player.nativeElement.src = this.songs[0];
-    this.player.nativeElement.load();
-    this.activeSong = this.songs[0];
-    this.isPlaying = false;
+      const existingSongIndex = this.songs.findIndex(media => media.path === receivedMedia);
+
+      if (existingSongIndex === -1) {
+        const song = new Song();
+        song.path = receivedMedia;
+        song.title = this.extractFileNameFromPath(receivedMedia);
+
+        this.songs.push(song);
+
+        this.setInitialActiveSong();
+      }
+    });
+
+    this.setInitialActiveSong();
   }
 
-  playSong(song: ISong): void {
+  playSong(song: Song): void {
 
-    if (this.audio.paused && this.player.nativeElement.currentTime > 0 && this.activeSong.id === song.id) {
+    if (this.audio.paused && this.player.nativeElement.currentTime > 0 && this.activeSong.path === song.path) {
       this.player.nativeElement.play();
       this.isPlaying = true;
       return;
@@ -50,21 +60,21 @@ export class HomeComponent implements OnInit {
     this.isPlaying = true;
   }
 
-  playSongFromPlaylist(songId: number): void {
+  playSongFromPlaylist(songPath: string): void {
 
-    const songIndex = this.songs.findIndex((song) => song.id === songId);
+    const songIndex = this.songs.findIndex((song) => song.path === songPath);
 
     if (songIndex !== -1) {
-      this.playSong(this.songs[songId]);
+      this.playSong(this.songs[songIndex]);
     }
   }
 
-  deleteSongFromPlaylist(songId: number): void {
-    const songIndex = this.songs.findIndex((song) => song.id === songId);
+  deleteSongFromPlaylist(songPath: string): void {
+    const songIndex = this.songs.findIndex((song) => song.path === songPath);
     this.songs.splice(songIndex, 1);
 
     // if deleted song is an active one
-    if (this.activeSong.id === songId) {
+    if (this.activeSong.path === songPath) {
       this.resetSong(this.songs[0]);
 
       if (this.songs.length !== 0) {
@@ -93,26 +103,43 @@ export class HomeComponent implements OnInit {
     if (this.isShuffleModeOn) {
       this.playRandomSong();
     } else {
-      this.playNextSong();  
+      this.playNextSong();
     }
   }
 
   playNextSong(): void {
-    const nextSongIndex = this.songs.findIndex((song) => song.id === this.activeSong.id + 1);
+    if (this.songs.length < 2) {
+      return;
+    }
 
-    if (nextSongIndex === -1) {
+    const songIndex = this.songs.findIndex((song) => song.path === this.activeSong?.path);
+    if (songIndex === -1) {
+      return;
+    }
+    const nextSongIndex = songIndex + 1;
+
+    if (nextSongIndex === this.songs.length && this.isRepeatModeOn) {
       this.playSong(this.songs[0]);
     } else {
-      this.playSong(this.songs[nextSongIndex]);
+      if (nextSongIndex < this.songs.length) {
+        this.playSong(this.songs[songIndex + 1]);
+      }
     }
   }
 
   playPreviousSong(): void {
-    const prevSongIndex = this.songs.findIndex((song) => song.id === this.activeSong.id - 1);
+    if (this.songs.length < 2) {
+      return;
+    }
 
-    if (prevSongIndex === -1) {
-      this.playSong(this.songs[this.songs.length - 1]);
-    } else {
+    const songIndex = this.songs.findIndex((song) => song.path === this.activeSong?.path);
+    if (songIndex === -1) {
+      return;
+    }
+
+    const prevSongIndex = songIndex - 1;
+
+    if (prevSongIndex >= 0) {
       this.playSong(this.songs[prevSongIndex]);
     }
   }
@@ -122,30 +149,25 @@ export class HomeComponent implements OnInit {
     this.audio.pause();
   }
 
-  getListOfSongs(): ISong[] {
+  getListOfSongs(): Song[] {
     return [
       {
-        id: 0,
         title: 'music_1.mp3',
         path: './assets/music/music_1.mp3'
       },
       {
-        id: 1,
         title: 'music_2.mp3',
         path: './assets/music/music_2.mp3'
       },
       {
-        id: 2,
         title: 'music_3.mp3',
         path: './assets/music/music_3.mp3'
       },
       {
-        id: 3,
         title: 'music_4.mp3',
         path: './assets/music/music_4.mp3'
       },
       {
-        id: 4,
         title: 'music_5.mp3',
         path: './assets/music/music_5.mp3'
       }
@@ -169,26 +191,30 @@ export class HomeComponent implements OnInit {
   playRandomSong() {
     let randomSong = Math.floor(Math.random() * this.songs.length);
 
-    while (this.activeSong.id === this.songs[randomSong].id) {
+    while (this.activeSong.path === this.songs[randomSong].path) {
       randomSong = Math.floor(Math.random() * this.songs.length);
     }
 
     this.playSong(this.songs[randomSong]);
   }
 
+  addMediaFiles() {
+    this.electronService.openFileDialog();
+  }
+
   setRepeatMode() {
     this.isRepeatModeOn = !this.isRepeatModeOn;
   }
 
-  closeProgram(){
+  closeProgram() {
     this.electronService.closeProgram();
   }
 
-  minimizeProgram(){
+  minimizeProgram() {
     this.electronService.minimizeProgram();
   }
 
-  private resetSong(song: ISong) {
+  private resetSong(song: Song) {
     this.durationTime = undefined;
     this.audio.pause();
 
@@ -222,5 +248,18 @@ export class HomeComponent implements OnInit {
 
   private generatePercentage(currentTime: number, duration: number): number {
     return Math.round((currentTime / duration) * 100);
+  }
+
+  private extractFileNameFromPath(path: string) {
+    return path.split('\\').pop().split('/').pop();
+  }
+
+  private setInitialActiveSong() {
+    if (this.songs.length > 0 && !this.activeSong) {
+      this.player.nativeElement.src = this.songs[0];
+      this.player.nativeElement.load();
+      this.activeSong = this.songs[0];
+      this.isPlaying = false;
+    }
   }
 }

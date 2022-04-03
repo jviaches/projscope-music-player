@@ -2,7 +2,7 @@
 
 .wrapper {
   position: absolute;
-  width: 430px;  
+  width: 430px;
   margin: 10px 60px;
   -webkit-app-region: no-drag;
 }
@@ -140,9 +140,11 @@ ul {
 }
 
 .playlist {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   height: 400px;
   background-color: var(--background-color);
-  margin-bottom: 20px;
   padding: 0;
 }
 
@@ -194,4 +196,18 @@ button[disabled] {
   &:hover {
     color: var(--control-non-active-color);
   }
+}
+
+.playlist-footer {
+  width: 100%;
+}
+
+.add-media-control {
+  width: 100%;
+  padding: 8px;
+  -webkit-app-region: no-drag;
+  color: var(--theme-color);
+  border-style: hidden;
+  border-radius: 8px;
+  cursor: pointer;
 }

@@ -1,5 +1,4 @@
-export interface ISong {
-  id: number;
+export class Song {
   title: string;
   path: string;
 }

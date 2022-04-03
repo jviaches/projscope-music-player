@@ -53,6 +53,7 @@
     "@angular/platform-browser": "13.2.4",
     "@angular/platform-browser-dynamic": "13.2.4",
     "@angular/router": "13.2.4",
+    "@electron/remote": "2.0.8",
     "angular-font-awesome": "3.1.2",
     "dataurl": "0.1.0",
     "font-awesome": "4.7.0",

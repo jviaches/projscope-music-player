@@ -70,16 +70,21 @@
     <div *ngIf="isPlayListOpened === true" class="playlist" style="-webkit-app-region: no-drag">
       <ul class="playListItems">
         <li *ngFor="let song of songs; let i = index">
-          <div class="plItem" [ngStyle]="{'color': song?.id === activeSong?.id ? 'var(--theme-color)' : ''}">
+          <div class="plItem" [ngStyle]="{'color': song?.path === activeSong?.path ? 'var(--theme-color)' : ''}">
             <span class="plNum">{{i+1 | number : '2.0-0'}}</span>
-            <span class="plTitle" (click)="playSongFromPlaylist(song.id)">{{song.title}}</span>
+            <span class="plTitle" (click)="playSongFromPlaylist(song.path)">{{song.title}}</span>
             <!-- <span class="plLength">2:46</span> -->
-            <span class="plRemove" (click)="deleteSongFromPlaylist(song.id)">
+            <span class="plRemove" (click)="deleteSongFromPlaylist(song.path)">
               <i class="fa fa-trash"></i>
             </span>
           </div>
         </li>
       </ul>
+      <div class="playlist-footer">
+        <button class="add-media-control" (click)="addMediaFiles()">
+          Add Media
+        </button>
+      </div>
     </div>
   </div>
 </div>

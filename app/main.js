@@ -4,6 +4,7 @@ var electron_1 = require("electron");
 var path = require("path");
 var fs = require("fs");
 var url = require("url");
+var remoteMain = require("@electron/remote/main");
 var win = null;
 var args = process.argv.slice(1), serve = args.some(function (val) { return val === '--serve'; });
 function createWindow() {
@@ -16,7 +17,11 @@ function createWindow() {
         webPreferences: {
             nodeIntegration: true,
             allowRunningInsecureContent: (serve) ? true : false,
-            contextIsolation: false, // false if you want to run e2e test with Spectron
+            contextIsolation: false,
+            plugins: true,
+            backgroundThrottling: false,
+            nativeWindowOpen: false,
+            webSecurity: false
         },
         titleBarStyle: 'hiddenInset',
         frame: false,
@@ -24,8 +29,9 @@ function createWindow() {
         transparent: true,
         minimizable: false,
         maximizable: false,
-        closable: false
+        closable: false,
     });
+    remoteMain.enable(win.webContents);
     if (serve) {
         win.webContents.openDevTools();
         require('electron-reload')(__dirname, {
@@ -46,8 +52,18 @@ function createWindow() {
             slashes: true
         }));
     }
-    win.webContents.on("ipc-message", function (event, input, args) {
-        if (input === "resize-app") {
+    win.webContents.on('ipc-message', function (event, input, args) {
+        if (input === 'open-file-dialog') {
+            electron_1.dialog.showOpenDialog(null, {
+                properties: ['openFile', 'multiSelections'],
+                filters: [{ name: 'MP3 Media files', extensions: ['mp3'] }],
+            }).then(function (res) {
+                if (res.filePaths) {
+                    win.webContents.send("add-media", res.filePaths);
+                }
+            });
+        }
+        if (input === 'resize-app') {
             win.resizable = true;
             win.setSize(win.getSize()[0], args);
             win.resizable = false;

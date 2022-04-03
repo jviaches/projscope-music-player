@@ -1,9 +1,12 @@
-import { app, BrowserWindow, screen } from 'electron';
+import { app, BrowserWindow, dialog, screen } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as url from 'url';
+import * as remoteMain from '@electron/remote/main'
+import { json } from 'stream/consumers';
 
 let win: BrowserWindow = null;
+
 const args = process.argv.slice(1),
   serve = args.some(val => val === '--serve');
 
@@ -19,6 +22,10 @@ function createWindow(): BrowserWindow {
       nodeIntegration: true,
       allowRunningInsecureContent: (serve) ? true : false,
       contextIsolation: false,  // false if you want to run e2e test with Spectron
+      plugins: true, 
+      backgroundThrottling: false,
+      nativeWindowOpen: false,
+      webSecurity: false 
     },    
     titleBarStyle: 'hiddenInset',
     frame: false,
@@ -26,8 +33,10 @@ function createWindow(): BrowserWindow {
     transparent: true,
     minimizable: false,
     maximizable: false,
-    closable: false
+    closable: false,    
   });
+
+  remoteMain.enable(win.webContents);
 
 
   if (serve) {
@@ -52,9 +61,20 @@ function createWindow(): BrowserWindow {
     }));
   }
 
-  win.webContents.on("ipc-message", (event, input, args) => {
+  win.webContents.on('ipc-message', (event, input, args) => {
 
-    if (input === "resize-app") {
+    if (input === 'open-file-dialog') {
+      dialog.showOpenDialog(null, {
+        properties: ['openFile', 'multiSelections'],
+        filters: [{ name: 'MP3 Media files', extensions: ['mp3'] }],
+      }).then( res => {
+        if (res.filePaths) {
+          win.webContents.send("add-media", res.filePaths);
+        }
+      });
+    }
+
+    if (input === 'resize-app') {
       win.resizable = true;      
       win.setSize(win.getSize()[0], args);
       win.resizable = false;
