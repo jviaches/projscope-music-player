@@ -30,6 +30,11 @@ export class HomeComponent implements OnInit {
   ngOnInit() {
     this.electronService.mediaSources.subscribe(receivedMedia => {
 
+      // needed for first time program run (receivedMedia = null)
+      if (!receivedMedia) {
+        return;
+      }
+
       const existingSongIndex = this.songs.findIndex(media => media.path === receivedMedia);
 
       if (existingSongIndex === -1) {
@@ -117,6 +122,11 @@ export class HomeComponent implements OnInit {
       return;
     }
     const nextSongIndex = songIndex + 1;
+
+    if (this.isShuffleModeOn) {
+      this.playRandomSong();
+      return;
+    } 
 
     if (nextSongIndex === this.songs.length && this.isRepeatModeOn) {
       this.playSong(this.songs[0]);
@@ -251,7 +261,11 @@ export class HomeComponent implements OnInit {
   }
 
   private extractFileNameFromPath(path: string) {
-    return path.split('\\').pop().split('/').pop();
+    if (path && path.length > 0) {
+      return path.split('\\').pop().split('/').pop();  
+    }
+
+    return '';
   }
 
   private setInitialActiveSong() {

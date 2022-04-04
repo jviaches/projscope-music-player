@@ -73,14 +73,13 @@
   padding: 20px;
   background-color: var(--background-color);
   cursor: pointer;
-
+  
   & i {
     display: block;
     color: var(--control-active-color);
     font-size: 26px;
     text-align: center;
     line-height: 1;
-    background-color: var(--background-color);
 
     &:hover {
       color: var(--theme-color);

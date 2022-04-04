@@ -11,7 +11,7 @@
   <div class="player" style="-webkit-app-region: drag">
     <div class="cover" [ngStyle]="{animation:isPlaying?'rotation 3s infinite linear':''}"></div>
     <div class="song-info">
-      <div class="band">{{ activeSong?.title }}</div>
+      <div class="band">{{ activeSong?.title?.length > 50 ? ( activeSong?.title | slice:0:50) + '...' : activeSong?.title }}</div>
       <div>
         <button class="small-control" style="-webkit-app-region: no-drag" (click)="minimizeProgram()">
           <i class="fa fa-window-minimize"></i>
@@ -22,23 +22,23 @@
       </div>
     </div>
     <div class="controls" style="-webkit-app-region: no-drag">
-      <button class="control prev" (click)="playPreviousSong()">
+      <button class="control prev" (click)="playPreviousSong()" [disabled]="this.songs.length === 0">
         <i class="fa fa-step-backward"></i>
       </button>
-      <button class="control play" *ngIf="isPlaying" (click)="player.pause()">
+      <button class="control play" *ngIf="isPlaying" (click)="player.pause()" [disabled]="this.songs.length === 0">
         <i class="fa fa-pause" aria-hidden="true"></i>
       </button>
-      <button class="control play" *ngIf="!isPlaying" (click)="playSong(activeSong)">
+      <button class="control play" *ngIf="!isPlaying" (click)="playSong(activeSong)" [disabled]="this.songs.length === 0">
         <i class="fa fa-play" aria-hidden="true"></i>
       </button>
-      <button class="control next" (click)="playNextSong()">
+      <button class="control next" (click)="playNextSong()" [disabled]="this.songs.length === 0">
         <i class="fa fa-step-forward"></i>
       </button>
       <ul class="control-options">
         <li>
           <button class="small-control" style="-webkit-app-region: no-drag" (click)="togglePlayList()"
           [ngStyle]="{'color': isPlayListOpened ? 'var(--theme-color)' : ''}">
-            <i class="fa fa-ellipsis-h"></i>
+          <i class="fa fa-music"></i>
           </button>
         </li>
         <li>
@@ -48,7 +48,7 @@
           </button>
         </li>
         <li>
-          <button class="small-control" (click)="setRepeatMode()"
+          <button class="small-control" (click)="setRepeatMode()" [disabled]="this.songs.length === 0"
           [ngStyle]="{'color': isRepeatModeOn ? 'var(--theme-color)' : ''}">
             <i class="fa fa-undo"></i>
           </button>
