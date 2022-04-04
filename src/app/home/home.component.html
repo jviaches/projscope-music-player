@@ -11,14 +11,15 @@
   <div class="player" style="-webkit-app-region: drag">
     <div class="cover" [ngStyle]="{animation:isPlaying?'rotation 3s infinite linear':''}"></div>
     <div class="song-info">
-      <div class="band">{{ activeSong?.title?.length > 50 ? ( activeSong?.title | slice:0:50) + '...' : activeSong?.title }}</div>
+      <div class="band">{{ activeSong?.title?.length > 50 ? ( activeSong?.title | slice:0:50) + '...' :
+        activeSong?.title }}</div>
       <div>
         <button class="small-control" style="-webkit-app-region: no-drag" (click)="minimizeProgram()">
           <i class="fa fa-window-minimize"></i>
         </button>
         <button class="small-control" style="-webkit-app-region: no-drag" (click)="closeProgram()">
           <i class="fa fa-window-close"></i>
-        </button> 
+        </button>
       </div>
     </div>
     <div class="controls" style="-webkit-app-region: no-drag">
@@ -28,7 +29,8 @@
       <button class="control play" *ngIf="isPlaying" (click)="player.pause()" [disabled]="this.songs.length === 0">
         <i class="fa fa-pause" aria-hidden="true"></i>
       </button>
-      <button class="control play" *ngIf="!isPlaying" (click)="playSong(activeSong)" [disabled]="this.songs.length === 0">
+      <button class="control play" *ngIf="!isPlaying" (click)="playSong(activeSong)"
+        [disabled]="this.songs.length === 0">
         <i class="fa fa-play" aria-hidden="true"></i>
       </button>
       <button class="control next" (click)="playNextSong()" [disabled]="this.songs.length === 0">
@@ -37,8 +39,8 @@
       <ul class="control-options">
         <li>
           <button class="small-control" style="-webkit-app-region: no-drag" (click)="togglePlayList()"
-          [ngStyle]="{'color': isPlayListOpened ? 'var(--theme-color)' : ''}">
-          <i class="fa fa-music"></i>
+            [ngStyle]="{'color': isPlayListOpened ? 'var(--theme-color)' : ''}">
+            <i class="fa fa-music"></i>
           </button>
         </li>
         <li>
@@ -49,7 +51,7 @@
         </li>
         <li>
           <button class="small-control" (click)="setRepeatMode()" [disabled]="this.songs.length === 0"
-          [ngStyle]="{'color': isRepeatModeOn ? 'var(--theme-color)' : ''}">
+            [ngStyle]="{'color': isRepeatModeOn ? 'var(--theme-color)' : ''}">
             <i class="fa fa-undo"></i>
           </button>
         </li>
@@ -71,8 +73,10 @@
       <ul class="playListItems">
         <li *ngFor="let song of songs; let i = index">
           <div class="plItem" [ngStyle]="{'color': song?.path === activeSong?.path ? 'var(--theme-color)' : ''}">
-            <span class="plNum">{{i+1 | number : '2.0-0'}}</span>
-            <span class="plTitle" (click)="playSongFromPlaylist(song.path)">{{song.title}}</span>
+            <div>
+              <span class="plNum">{{i+1 | number : '2.0-0'}}</span>
+              <span class="plTitle" (click)="playSongFromPlaylist(song.path)">{{song.title}}</span>
+            </div>
             <!-- <span class="plLength">2:46</span> -->
             <span class="plRemove" (click)="deleteSongFromPlaylist(song.path)">
               <i class="fa fa-trash"></i>

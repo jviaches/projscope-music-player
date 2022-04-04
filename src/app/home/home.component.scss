@@ -155,6 +155,8 @@ ul {
 }
 
 .plItem {
+  display: flex;
+  justify-content: space-between;
   position: relative;
   color: var(--control-active-color);
 

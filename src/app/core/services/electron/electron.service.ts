@@ -42,7 +42,7 @@ export class ElectronService {
       this.ipcRenderer.on('add-media', (event, arg) => {
         this.ngZone.run(() => {
           arg.forEach(element => {
-            this.mediaSources.next(element)
+            this.mediaSources.next(element);
           });
         });
       });
