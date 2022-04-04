@@ -73,7 +73,7 @@
   padding: 20px;
   background-color: var(--background-color);
   cursor: pointer;
-  
+
   & i {
     display: block;
     color: var(--control-active-color);
@@ -144,7 +144,24 @@ ul {
   justify-content: space-between;
   height: 400px;
   background-color: var(--background-color);
-  padding: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-app-region: no-drag;
+
+  &::-webkit-scrollbar {
+    width: 12px;
+    display: block;
+    border: solid 6px transparent;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: var(--control-non-active-color);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--theme-color);
+    border: 4px var(--control-non-active-color) solid;
+  }
 }
 
 .playListItems li {

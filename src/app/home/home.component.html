@@ -69,7 +69,7 @@
         </div>
       </div>
     </div>
-    <div *ngIf="isPlayListOpened === true" class="playlist" style="-webkit-app-region: no-drag">
+    <div *ngIf="isPlayListOpened === true" class="playlist">
       <ul class="playListItems">
         <li *ngFor="let song of songs; let i = index">
           <div class="plItem" [ngStyle]="{'color': song?.path === activeSong?.path ? 'var(--theme-color)' : ''}">
