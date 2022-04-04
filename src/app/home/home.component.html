@@ -57,12 +57,12 @@
         </li>
       </ul>
     </div>
-    <div class="progress" style="-webkit-app-region: no-drag">
+    <div class="progress" style="-webkit-app-region: no-drag" (click)="seekToTime($event)">
       <div class="track-time">
         <div class="current-time">{{ currentTime$ | async }}</div>
         <div class="track-length">{{ durationTime }}</div>
       </div>
-      <div class="progress-area">
+      <div #progressArea class="progress-area">
         <div #progressBar class="progress-bar" role="progressbar"
           [ngStyle]="{'width': (currentProgress$ | async) + '%'}" [attr.aria-valuenow]="(currentProgress$ | async) "
           aria-valuemin="0" aria-valuemax="100">

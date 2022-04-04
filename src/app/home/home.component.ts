@@ -11,6 +11,7 @@ import { Song } from '../models/song.model';
 export class HomeComponent implements OnInit {
 
   @ViewChild('player', { static: true }) player: ElementRef;
+  @ViewChild('progressArea', { static: true }) progressArea: ElementRef;
 
   currentProgress$ = new BehaviorSubject(0);
   currentTime$ = new Subject();
@@ -49,6 +50,18 @@ export class HomeComponent implements OnInit {
     });
 
     this.setInitialActiveSong();
+  }
+
+  seekToTime(event) {
+    var offsetWidth = this.progressArea.nativeElement.clientWidth;
+    const percents = this.generatePercentage(event.offsetX, offsetWidth);
+
+    if (!isNaN(percents)) {
+      const currentSeconds = Math.floor(this.player.nativeElement.currentTime % 60);
+      this.player.nativeElement.currentTime = currentSeconds * percents / 100;
+
+      this.player.nativeElement.currentTime = percents * this.player.nativeElement.duration / 100;
+    }
   }
 
   playSong(song: Song): void {
@@ -126,7 +139,7 @@ export class HomeComponent implements OnInit {
     if (this.isShuffleModeOn) {
       this.playRandomSong();
       return;
-    } 
+    }
 
     if (nextSongIndex === this.songs.length && this.isRepeatModeOn) {
       this.playSong(this.songs[0]);
@@ -157,31 +170,6 @@ export class HomeComponent implements OnInit {
   onPause(): void {
     this.isPlaying = false;
     this.audio.pause();
-  }
-
-  getListOfSongs(): Song[] {
-    return [
-      {
-        title: 'music_1.mp3',
-        path: './assets/music/music_1.mp3'
-      },
-      {
-        title: 'music_2.mp3',
-        path: './assets/music/music_2.mp3'
-      },
-      {
-        title: 'music_3.mp3',
-        path: './assets/music/music_3.mp3'
-      },
-      {
-        title: 'music_4.mp3',
-        path: './assets/music/music_4.mp3'
-      },
-      {
-        title: 'music_5.mp3',
-        path: './assets/music/music_5.mp3'
-      }
-    ];
   }
 
   togglePlayList() {
@@ -262,7 +250,7 @@ export class HomeComponent implements OnInit {
 
   private extractFileNameFromPath(path: string) {
     if (path && path.length > 0) {
-      return path.split('\\').pop().split('/').pop();  
+      return path.split('\\').pop().split('/').pop();
     }
 
     return '';
