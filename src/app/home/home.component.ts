@@ -36,16 +36,34 @@ export class HomeComponent implements OnInit {
         return;
       }
 
-      const existingSongIndex = this.songs.findIndex(media => media.path === receivedMedia);
+      let existingSongIndex = -1;
+      
+      // receivedMedia can be Song (Load flow) or file relative path string (add file to playlist flow)
+      if (receivedMedia?.path) {
+        existingSongIndex = this.songs.findIndex(media => media.path === receivedMedia?.path);
+      } else {
+        existingSongIndex = this.songs.findIndex(media => media.path === receivedMedia);
+      }
 
       if (existingSongIndex === -1) {
-        const song = new Song();
-        song.path = receivedMedia;
-        song.title = this.extractFileNameFromPath(receivedMedia);
-
-        this.songs.push(song);
+        // load playlist flow
+        if (receivedMedia?.path) {
+          this.songs.push(receivedMedia);
+        } else { // add file to playlist flow
+          const song = new Song();
+          song.path = receivedMedia;
+          song.title = this.extractFileNameFromPath(receivedMedia);
+  
+          this.songs.push(song);
+        }
 
         this.setInitialActiveSong();
+      }
+    });
+
+    this.electronService.saveStatusChange.subscribe( statusChange => {
+      if (statusChange) {
+        this.electronService.saveMediaList(this.songs);
       }
     });
 
@@ -53,7 +71,7 @@ export class HomeComponent implements OnInit {
   }
 
   seekToTime(event) {
-    var offsetWidth = this.progressArea.nativeElement.clientWidth;
+    const offsetWidth = this.progressArea.nativeElement.clientWidth;
     const percents = this.generatePercentage(event.offsetX, offsetWidth);
 
     if (!isNaN(percents)) {
@@ -89,6 +107,10 @@ export class HomeComponent implements OnInit {
 
   deleteSongFromPlaylist(songPath: string): void {
     const songIndex = this.songs.findIndex((song) => song.path === songPath);
+    if (songIndex === -1) {
+      return;
+    }
+
     this.songs.splice(songIndex, 1);
 
     // if deleted song is an active one
@@ -99,6 +121,8 @@ export class HomeComponent implements OnInit {
         this.setSongDuration();
       }
     }
+
+    this.electronService.saveMediaList(this.songs);
   }
 
   onTimeUpdate() {

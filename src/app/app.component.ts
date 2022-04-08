@@ -14,15 +14,15 @@ export class AppComponent {
     private translate: TranslateService
   ) {
     this.translate.setDefaultLang('en');
-    console.log('APP_CONFIG', APP_CONFIG);
+    //console.log('APP_CONFIG', APP_CONFIG);
 
     if (electronService.isElectron) {
-      console.log(process.env);
-      console.log('Run in electron');
-      console.log('Electron ipcRenderer', this.electronService.ipcRenderer);
-      console.log('NodeJS childProcess', this.electronService.childProcess);
+      // console.log(process.env);
+      // console.log('Run in electron');
+      // console.log('Electron ipcRenderer', this.electronService.ipcRenderer);
+      // console.log('NodeJS childProcess', this.electronService.childProcess);
     } else {
-      console.log('Run in browser');
+      // console.log('Run in browser');
     }
   }
 }
