@@ -1,9 +1,8 @@
-import { app, BrowserWindow, dialog, screen } from 'electron';
+import { app, BrowserWindow, dialog } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as url from 'url';
 import * as remoteMain from '@electron/remote/main'
-import { json } from 'stream/consumers';
 
 let win: BrowserWindow = null;
 
@@ -37,7 +36,6 @@ function createWindow(): BrowserWindow {
   });
 
   remoteMain.enable(win.webContents);
-
 
   if (serve) {
     win.webContents.openDevTools();

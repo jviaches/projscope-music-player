@@ -55,13 +55,12 @@
     "@angular/router": "13.2.4",
     "@electron/remote": "2.0.8",
     "angular-font-awesome": "3.1.2",
+    "electron-reload": "1.5.0",
     "dataurl": "0.1.0",
     "font-awesome": "4.7.0",
     "rxjs": "7.5.0",
     "tslib": "^2.1.0",
-    "zone.js": "~0.11.4"
-  },
-  "devDependencies": {
+    "zone.js": "~0.11.4",
     "@angular-builders/custom-webpack": "13.1.0",
     "@angular-devkit/build-angular": "13.2.5",
     "@angular-eslint/builder": "13.1.0",
@@ -80,9 +79,6 @@
     "@typescript-eslint/eslint-plugin": "5.12.1",
     "@typescript-eslint/parser": "5.12.1",
     "conventional-changelog-cli": "2.1.1",
-    "electron": "17.1.0",
-    "electron-builder": "22.14.13",
-    "electron-reload": "1.5.0",
     "eslint": "8.9.0",
     "eslint-plugin-import": "2.25.4",
     "eslint-plugin-jsdoc": "37.9.4",
@@ -101,6 +97,10 @@
     "typescript": "~4.5.5",
     "wait-on": "6.0.1",
     "webdriver-manager": "12.1.8"
+  },
+  "devDependencies": {
+    "electron": "17.1.0",
+    "electron-builder": "22.14.13"
   },
   "engines": {
     "node": ">=14.0.0"
