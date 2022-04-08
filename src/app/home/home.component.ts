@@ -37,7 +37,7 @@ export class HomeComponent implements OnInit {
       }
 
       let existingSongIndex = -1;
-      
+
       // receivedMedia can be Song (Load flow) or file relative path string (add file to playlist flow)
       if (receivedMedia?.path) {
         existingSongIndex = this.songs.findIndex(media => media.path === receivedMedia?.path);
@@ -53,7 +53,7 @@ export class HomeComponent implements OnInit {
           const song = new Song();
           song.path = receivedMedia;
           song.title = this.extractFileNameFromPath(receivedMedia);
-  
+
           this.songs.push(song);
         }
 
@@ -61,7 +61,7 @@ export class HomeComponent implements OnInit {
       }
     });
 
-    this.electronService.saveStatusChange.subscribe( statusChange => {
+    this.electronService.saveStatusChange.subscribe(statusChange => {
       if (statusChange) {
         this.electronService.saveMediaList(this.songs);
       }

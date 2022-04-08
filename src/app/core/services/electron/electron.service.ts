@@ -95,7 +95,7 @@ export class ElectronService {
   }
 
   loadMediaList() {
-    this.fs.readFile(this.playListFileName, "utf-8", (err, data) => {
+    this.fs.readFile(this.playListFileName, 'utf-8', (err, data) => {
       try {
         this.triggerMediaSourceChanges(JSON.parse(data));
       } catch (error) {
