@@ -23,9 +23,6 @@ cache:
     - node_modules
     - $HOME/.cache/electron
     - $HOME/.cache/electron-builder
-
-before_install:
-  - cd projscope-music-player
   
 install:
    - |
