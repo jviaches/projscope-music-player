@@ -25,7 +25,7 @@ cache:
     - $HOME/.cache/electron-builder
 
 before_install:
-  - cd angular-electron
+  - cd projscope-music-player
   
 install:
    - |
