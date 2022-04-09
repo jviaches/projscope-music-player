@@ -11,9 +11,8 @@ Cross platform media player.
 ![Mac flow](https://github.com/jviaches/projscope-music-player/actions/workflows/macos.yml/badge.svg)
 
 ![image](https://github.com/jviaches/projscope-music-player/blob/main/src/assets/icons/electron.bmp)
-
-
-![image](https://user-images.githubusercontent.com/1269552/161130816-9af13350-ae78-433f-bdc7-eebae8769fbf.png)
+![image](https://github.com/jviaches/projscope-music-player/blob/main/images/open_playlist.png)
+![image](https://github.com/jviaches/projscope-music-player/blob/main/images/player.PNG)
 
 # Technology stack
 - Angular v13.2.4
