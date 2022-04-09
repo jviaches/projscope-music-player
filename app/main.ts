@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog } from 'electron';
+import { app, autoUpdater, BrowserWindow, dialog } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as url from 'url';
@@ -95,6 +95,13 @@ function createWindow(): BrowserWindow {
     // when you should delete the corresponding element.
     win = null;
   });
+
+  win.once('ready-to-show', () => {
+    setInterval(() => {
+      autoUpdater.checkForUpdates();
+    }, 10009*60*60*24) // once a day
+  });
+  
 
   return win;
 }
