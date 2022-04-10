@@ -7,6 +7,8 @@ import * as childProcess from 'child_process';
 import * as fs from 'fs';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { Song } from '../../../models/song.model';
+import * as path from 'path';
+import getAppDataPath from "appdata-path";
 
 @Injectable({
   providedIn: 'root'
@@ -83,24 +85,45 @@ export class ElectronService {
   }
 
   saveMediaList(content: any) {
-    this.fs.writeFile(this.playListFileName, JSON.stringify(content), (err) => {
-      if (err) {
-        alert('An error ocurred updating settings file' + err.message);
-        console.log(err);
-        return;
-      } else {
-        console.log('File saved succesfully!');
+    let playListPath = getAppDataPath("projscope-player");
+
+    this.fs.mkdir(playListPath, () => {
+
+      // some kind of bug in getAppDataPath library
+      // temporary fix for local run
+      if (playListPath.includes('.config')) {
+        playListPath = '';
       }
+
+      this.fs.writeFile(path.join(playListPath, this.playListFileName), JSON.stringify(content), (err) => {
+        if (err) {
+          alert('An error ocurred updating settings file' + err.message);
+          console.log(err);
+          return;
+        } else {
+          console.log('File saved succesfully!');
+        }
+      });
     });
   }
 
   loadMediaList() {
-    this.fs.readFile(this.playListFileName, 'utf-8', (err, data) => {
-      try {
-        this.triggerMediaSourceChanges(JSON.parse(data));
-      } catch (error) {
-        console.log('Unable to load.. ' + error);
+    let playListPath = getAppDataPath("projscope-player");
+
+    this.fs.mkdir(playListPath, () => {
+
+      // some kind of bug in getAppDataPath library
+      // temporary fix for local run
+      if (playListPath.includes('.config')) {
+        playListPath = '';
       }
+      this.fs.readFile(path.join(playListPath, this.playListFileName), 'utf-8', (err, data) => {
+        try {
+          this.triggerMediaSourceChanges(JSON.parse(data));
+        } catch (error) {
+          console.log('Unable to load.. ' + error);
+        }
+      });
     });
   }
 

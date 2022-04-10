@@ -2,7 +2,7 @@ import { app, autoUpdater, BrowserWindow, dialog } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as url from 'url';
-import * as remoteMain from '@electron/remote/main'
+import * as remoteMain from '@electron/remote/main';
 
 let win: BrowserWindow = null;
 
@@ -21,18 +21,18 @@ function createWindow(): BrowserWindow {
       nodeIntegration: true,
       allowRunningInsecureContent: (serve) ? true : false,
       contextIsolation: false,  // false if you want to run e2e test with Spectron
-      plugins: true, 
+      plugins: true,
       backgroundThrottling: false,
       nativeWindowOpen: false,
-      webSecurity: false 
-    },    
+      webSecurity: false
+    },
     titleBarStyle: 'hiddenInset',
     frame: false,
     resizable: false,
     transparent: true,
     minimizable: false,
     maximizable: false,
-    closable: false,    
+    closable: false,
   });
 
   remoteMain.enable(win.webContents);
@@ -65,7 +65,7 @@ function createWindow(): BrowserWindow {
       dialog.showOpenDialog(null, {
         properties: ['openFile', 'multiSelections'],
         filters: [{ name: 'MP3 Media files', extensions: ['mp3'] }],
-      }).then( res => {
+      }).then(res => {
         if (res.filePaths) {
           win.webContents.send("add-media", res.filePaths);
         }
@@ -73,7 +73,7 @@ function createWindow(): BrowserWindow {
     }
 
     if (input === 'resize-app') {
-      win.resizable = true;      
+      win.resizable = true;
       win.setSize(win.getSize()[0], args);
       win.resizable = false;
     }
@@ -95,13 +95,6 @@ function createWindow(): BrowserWindow {
     // when you should delete the corresponding element.
     win = null;
   });
-
-  win.once('ready-to-show', () => {
-    setInterval(() => {
-      autoUpdater.checkForUpdates();
-    }, 10009*60*60*24) // once a day
-  });
-  
 
   return win;
 }

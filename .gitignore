@@ -104,3 +104,7 @@ dist
 .tern-port
 .angular/cache/
 release/
+app/main.js.map
+app/main.js
+src/environments/environment.js
+src/environments/environment.js.map
