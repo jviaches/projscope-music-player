@@ -8,7 +8,7 @@ import * as fs from 'fs';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { Song } from '../../../models/song.model';
 import * as path from 'path';
-import getAppDataPath from "appdata-path";
+import getAppDataPath from 'appdata-path';
 
 @Injectable({
   providedIn: 'root'
@@ -85,7 +85,7 @@ export class ElectronService {
   }
 
   saveMediaList(content: any) {
-    let playListPath = getAppDataPath("projscope-player");
+    let playListPath = getAppDataPath('projscope-player');
 
     this.fs.mkdir(playListPath, () => {
 
@@ -108,7 +108,7 @@ export class ElectronService {
   }
 
   loadMediaList() {
-    let playListPath = getAppDataPath("projscope-player");
+    let playListPath = getAppDataPath('projscope-player');
 
     this.fs.mkdir(playListPath, () => {
 
