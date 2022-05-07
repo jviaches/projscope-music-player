@@ -11,8 +11,7 @@
   <div class="player" style="-webkit-app-region: drag">
     <div class="cover" [ngStyle]="{animation:isPlaying?'rotation 3s infinite linear':''}"></div>
     <div class="song-info">
-      <div class="band">{{ activeSong?.title?.length > 50 ? ( activeSong?.title | slice:0:50) + '...' :
-        activeSong?.title }}</div>
+      <div class="band">{{ displaySongTitle(this.activeSong?.title) }}</div>
       <div>
         <button class="small-control" style="-webkit-app-region: no-drag" (click)="minimizeProgram()">
           <i class="fa fa-window-minimize"></i>
@@ -75,7 +74,7 @@
           <div class="plItem" [ngStyle]="{'color': song?.path === activeSong?.path ? 'var(--theme-color)' : ''}">
             <div>
               <span class="plNum">{{i+1 | number : '2.0-0'}}</span>
-              <span class="plTitle" (click)="playSongFromPlaylist(song.path)">{{song.title}}</span>
+              <span class="plTitle" (click)="playSongFromPlaylist(song.path)">{{displaySongTitle(song.title)}}</span>
             </div>
             <!-- <span class="plLength">2:46</span> -->
             <span class="plRemove" (click)="deleteSongFromPlaylist(song.path)">

@@ -1,4 +1,7 @@
 {
+  "appId": "com.projscope.mp3-player",
+  "productName": "Projscope MP3 Player",
+  "copyright": "Projscope.com",
   "asar": false,
   "directories": {
     "output": "release/"
@@ -37,7 +40,14 @@
   "linux": {
     "icon": "dist/assets/icons",
     "target": [
-      "AppImage"
-    ]
+      "AppImage",
+      "rpm",
+      "deb"
+    ],
+    "packageCategory": "Audio",
+    "synopsis": "Projscope MP3 player",
+    "description": "Projscope MP3 player is free opensource cross platform audio desktop app to play you favorite songs!",
+    "desktop": true,
+    "category": "Audio"
   }
 }

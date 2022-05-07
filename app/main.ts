@@ -33,6 +33,7 @@ function createWindow(): BrowserWindow {
     minimizable: false,
     maximizable: false,
     closable: false,
+    icon: path.join(__dirname, './icons/favicon-32x32.png')
   });
 
   remoteMain.enable(win.webContents);

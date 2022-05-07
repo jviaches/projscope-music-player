@@ -1,17 +1,23 @@
 {
   "name": "projscope-music-player",
-  "version": "0.0.1",
+  "version": "0.0.1-alpha",
   "description": "Projscope Music Player",
   "homepage": "https://github.com/jviaches/projscope-music-player",
+  "license": "MIT",
   "author": {
     "name": "Viacheslav Blinder",
-    "email": "jviaches@gmail.com"
+    "email": "jviaches@gmail.com",
+    "url": "https://projscope.com"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/jviaches/projscope-music-player.git",
     "owner": "jviaches"
   },
+  "bugs": {
+    "url": "https://github.com/jviaches/projscope-music-player/issues"
+  },
+  "readme": "https://github.com/jviaches/projscope-music-player#readme",
   "keywords": [
     "angular",
     "angular 13",
@@ -44,7 +50,7 @@
     "electron:build": "npm run build:prod && electron-builder build --publish=never",
     "deploy:win": "electron-builder build --win --publish always",
     "deploy:mac": "electron-builder build --mac --publish always",
-    "deploy:linux": "electron-builder build --linux --publish always",
+    "deploy:linux": "electron-builder build --linux --publish always ",
     "test": "ng test --watch=false",
     "test:watch": "ng test",
     "e2e": "npm run build:prod && playwright test -c e2e/playwright.config.ts e2e/",

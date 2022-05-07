@@ -1,7 +1,7 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { BehaviorSubject, Subject } from 'rxjs';
-import { ElectronService } from '../core/services';
-import { Song } from '../models/song.model';
+import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
+import {BehaviorSubject, Subject} from 'rxjs';
+import {ElectronService} from '../core/services';
+import {Song} from '../models/song.model';
 
 @Component({
   selector: 'app-home',
@@ -10,8 +10,8 @@ import { Song } from '../models/song.model';
 })
 export class HomeComponent implements OnInit {
 
-  @ViewChild('player', { static: true }) player: ElementRef;
-  @ViewChild('progressArea', { static: true }) progressArea: ElementRef;
+  @ViewChild('player', {static: true}) player: ElementRef;
+  @ViewChild('progressArea', {static: true}) progressArea: ElementRef;
 
   currentProgress$ = new BehaviorSubject(0);
   currentTime$ = new Subject();
@@ -19,14 +19,16 @@ export class HomeComponent implements OnInit {
 
   audio = new Audio();
   isPlaying = false;
-  activeSong: Song;;
+  activeSong: Song;
+
   durationTime: string;
 
   isPlayListOpened = false;
   isShuffleModeOn = false;
   isRepeatModeOn = false;
 
-  constructor(public electronService: ElectronService) { }
+  constructor(public electronService: ElectronService) {
+  }
 
   ngOnInit() {
     this.electronService.mediaSources.subscribe(receivedMedia => {
@@ -68,6 +70,14 @@ export class HomeComponent implements OnInit {
     });
 
     this.setInitialActiveSong();
+  }
+
+  displaySongTitle(songName: string) {
+    const titleLength = 45;
+
+    return songName.length > titleLength ?
+      songName.substring(0, titleLength) + '...' :
+      songName
   }
 
   seekToTime(event) {
