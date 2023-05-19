@@ -2,6 +2,7 @@ import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {BehaviorSubject, Subject} from 'rxjs';
 import {ElectronService} from '../core/services';
 import {Song} from '../models/song.model';
+import { log } from 'console';
 
 @Component({
   selector: 'app-home',
@@ -75,8 +76,9 @@ export class HomeComponent implements OnInit {
   displaySongTitle(songName: string) {
     const titleLength = 45;
 
-    if(!length)
+    if(!length){
       return '';
+    }
 
     return songName.length > titleLength ?
       songName.substring(0, titleLength) + '...' :
@@ -258,7 +260,7 @@ export class HomeComponent implements OnInit {
     this.player.nativeElement.load();
     this.activeSong = song;
     this.isPlaying = false;
-    this.currentProgress$.next(0);
+    this.currentProgress$.next(0);  
   }
 
   private setSongDuration(): void {
@@ -303,4 +305,24 @@ export class HomeComponent implements OnInit {
       this.isPlaying = false;
     }
   }
+
+   isPrevControlDisabled(){
+    return this.songs && this.songs[0] == this.activeSong;
+   }
+
+   isNextControlDisabled(){
+    return this.songs && this.songs[this.songs.length-1] == this.activeSong && !this.isShuffleModeOn;
+   }
+
+   isPlayControlDisabled(){
+    return !(this.songs && this.songs.length > 0);
+   }
+
+   isRepeatControlDisabled(){
+    return !(this.songs && this.songs.length > 0);
+   }
+
+   isShuffleControlDisabled(){
+    return !(this.songs && this.songs.length > 1);
+   }
 }

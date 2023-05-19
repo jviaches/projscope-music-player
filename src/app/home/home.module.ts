@@ -5,9 +5,10 @@ import { HomeRoutingModule } from './home-routing.module';
 
 import { HomeComponent } from './home.component';
 import { SharedModule } from '../shared/shared.module';
+import { ControlHowerColorirective } from '../core/directives/control-color.directive';
 
 @NgModule({
-  declarations: [HomeComponent],
+  declarations: [HomeComponent, ControlHowerColorirective],
   imports: [CommonModule, SharedModule, HomeRoutingModule]
 })
 export class HomeModule {}
