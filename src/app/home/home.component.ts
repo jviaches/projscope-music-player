@@ -76,7 +76,7 @@ export class HomeComponent implements OnInit {
   displaySongTitle(songName: string) {
     const titleLength = 45;
 
-    if (!length) {
+    if (!songName) {
       return '';
     }
 
