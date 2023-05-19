@@ -75,6 +75,9 @@ export class HomeComponent implements OnInit {
   displaySongTitle(songName: string) {
     const titleLength = 45;
 
+    if(!length)
+      return '';
+
     return songName.length > titleLength ?
       songName.substring(0, titleLength) + '...' :
       songName
@@ -117,6 +120,7 @@ export class HomeComponent implements OnInit {
 
   deleteSongFromPlaylist(songPath: string): void {
     const songIndex = this.songs.findIndex((song) => song.path === songPath);
+
     if (songIndex === -1) {
       return;
     }
@@ -254,6 +258,7 @@ export class HomeComponent implements OnInit {
     this.player.nativeElement.load();
     this.activeSong = song;
     this.isPlaying = false;
+    this.currentProgress$.next(0);
   }
 
   private setSongDuration(): void {
