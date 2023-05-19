@@ -1,13 +1,12 @@
-import { Directive, ElementRef, HostListener, Input } from '@angular/core';
+import { Directive, ElementRef, HostBinding, HostListener, Input } from '@angular/core';
 
 @Directive({
-  selector: '[control-color]',
-  host: {
-    '(mouseenter)': 'onMouseEnter()',
-    '(mouseleave)': 'onMouseLeave()'
-  }
+  selector: '[control-color]'
 })
 export class ControlHowerColorDirective {
+  @HostBinding('mouseenter') mouseenter = 'onMouseEnter()';
+  @HostBinding('mouseleave') mouseleave = 'mouseleave()';
+
   @Input('control-color') highlightColor: string;
   @Input() colorChangeDisabled: boolean;
   @Input() detectNoColorChange: boolean;
@@ -26,9 +25,9 @@ export class ControlHowerColorDirective {
   }
 
   @HostListener('mouseleave')
-  onMouseLeave() {    
+  onMouseLeave() {
     if (!this.detectNoColorChange) {
-      this.highlight('var(--control-active-color)');  
+      this.highlight('var(--control-active-color)');
     }
   }
 
