@@ -46,6 +46,52 @@
   display: flex;
   justify-content: space-between;
   font-size: 12px;
+  overflow: hidden;
+}
+
+.band-wrapper {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+  -webkit-app-region: no-drag;
+  cursor: default;
+}
+
+.band-truncated {
+  display: inline;
+  white-space: nowrap;
+}
+
+.band-full {
+  display: none;
+  white-space: nowrap;
+}
+
+.band-wrapper:hover {
+  .band-truncated {
+    display: none;
+  }
+
+  .band-full {
+    display: inline-block;
+    animation: scrollTitle 8s linear infinite;
+  }
+}
+
+@keyframes scrollTitle {
+  0% {
+    transform: translateX(0);
+  }
+  15% {
+    transform: translateX(0);
+  }
+  85% {
+    transform: translateX(calc(-100% + 200px));
+  }
+  100% {
+    transform: translateX(calc(-100% + 200px));
+  }
 }
 
 .controls {
