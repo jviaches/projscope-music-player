@@ -10,7 +10,7 @@ Cross platform offline media player. This project was inspired by Winamp.
 ![Mac flow](https://github.com/jviaches/projscope-music-player/actions/workflows/macos.yml/badge.svg)
 
 ![image](https://github.com/jviaches/projscope-music-player/blob/main/src/assets/icons/electron.bmp)
-![image](https://github.com/user-attachments/assets/66af5168-164e-44a2-aceb-63d335fa5e2d")
+![image](https://github.com/user-attachments/assets/72ef3d39-5696-49a6-ad44-407243d32336)
 ![image](https://github.com/jviaches/projscope-music-player/blob/main/images/player.PNG)
 
 # Technology stack
