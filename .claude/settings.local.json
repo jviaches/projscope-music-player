@@ -6,7 +6,10 @@
       "Bash(taskkill //F //IM node.exe)",
       "Bash(taskkill //F //IM electron.exe)",
       "Bash(npm start)",
-      "Bash(npm install)"
+      "Bash(npm install)",
+      "Bash(curl -L -o /c/Development/MusicPlayer/src/assets/icons/vinyl.png \"https://pngimg.com/uploads/vinyl/vinyl_PNG105.png\")",
+      "Bash(node -e \":*)",
+      "Bash(npx electron scripts/generate-icon.js)"
     ]
   }
 }

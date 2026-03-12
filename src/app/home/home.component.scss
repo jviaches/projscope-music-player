@@ -167,15 +167,17 @@ ul {
 .playListItems li {
   cursor: pointer;
   display: block;
-  margin: 0;
+  margin: 2px 0;
   color: var(--control-non-active-color);
 }
 
 .plItem {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   position: relative;
   color: var(--control-active-color);
+  min-height: 24px;
 
   &:hover {
     color: var(--theme-color);
@@ -183,18 +185,31 @@ ul {
 }
 
 .plTitle {
-  left: 50px;
+  left: 40px;
   overflow: hidden;
   position: absolute;
   right: 65px;
   text-overflow: ellipsis;
   top: 0;
   white-space: nowrap;
+  font-size: 12px;
+  line-height: 20px;
 }
 
 .plNum {
-  padding-left: 21px;
-  width: 25px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-left: 10px;
+  border-radius: 50%;
+  background-color: transparent;
+  border: 1.5px solid var(--theme-color);
+  color: var(--theme-color);
+  font-size: 8px;
+  font-weight: bold;
+  flex-shrink: 0;
 }
 
 .plLength {
