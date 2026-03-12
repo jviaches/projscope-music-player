@@ -16,6 +16,10 @@ module.exports = (config, options) => {
             let fileReplacementParts = fileReplacement['with'].split('.');
             if (fileReplacementParts.length > 1 && ['web'].indexOf(fileReplacementParts[1]) >= 0) {
                 config.target = 'web';
+                config.resolve.fallback = {
+                    ...config.resolve.fallback,
+                    'appdata-path': false,
+                };
             }
             break;
         }

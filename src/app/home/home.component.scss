@@ -217,15 +217,24 @@ button[disabled] {
 }
 
 .playlist-footer {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
   width: 100%;
+  padding: 4px 0;
 }
 
 .add-media-control {
-  width: 100%;
+  flex: 1;
   padding: 8px;
   -webkit-app-region: no-drag;
   color: var(--theme-color);
+  background-color: var(--background-color);
   border-style: hidden;
   border-radius: 8px;
   cursor: pointer;
+
+  &:hover {
+    opacity: 0.8;
+  }
 }

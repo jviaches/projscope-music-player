@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npm run ng:serve)",
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(taskkill //F //IM electron.exe)",
+      "Bash(npm start)",
+      "Bash(npm install)"
+    ]
+  }
+}

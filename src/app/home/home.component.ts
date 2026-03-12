@@ -245,6 +245,10 @@ export class HomeComponent implements OnInit {
     this.electronService.openFileDialog();
   }
 
+  addMediaFolder() {
+    this.electronService.openFolderDialog();
+  }
+
   setRepeatMode() {
     this.isRepeatModeOn = !this.isRepeatModeOn;
   }

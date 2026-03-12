@@ -73,6 +73,41 @@ function createWindow(): BrowserWindow {
       });
     }
 
+    if (input === 'open-folder-dialog') {
+      const supportedExtensions = ['.mp3', '.wav', '.ogg', '.flac', '.aac', '.m4a', '.wma', '.webm'];
+
+      dialog.showOpenDialog(null, {
+        title: 'Select music folder',
+        properties: ['openDirectory'],
+      }).then(res => {
+        if (res.filePaths && res.filePaths.length > 0) {
+          const folderPath = res.filePaths[0];
+          const musicFiles: string[] = [];
+
+          const scanFolder = (dirPath: string) => {
+            const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+            for (const entry of entries) {
+              const fullPath = path.join(dirPath, entry.name);
+              if (entry.isDirectory()) {
+                scanFolder(fullPath);
+              } else if (entry.isFile()) {
+                const ext = path.extname(entry.name).toLowerCase();
+                if (supportedExtensions.includes(ext)) {
+                  musicFiles.push(fullPath);
+                }
+              }
+            }
+          };
+
+          scanFolder(folderPath);
+
+          if (musicFiles.length > 0) {
+            win.webContents.send("add-media", musicFiles);
+          }
+        }
+      });
+    }
+
     if (input === 'resize-app') {
       win.resizable = true;
       win.setSize(win.getSize()[0], args);

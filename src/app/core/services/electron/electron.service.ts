@@ -84,6 +84,10 @@ export class ElectronService {
     this.ipcRenderer.send('open-file-dialog');
   }
 
+  openFolderDialog(): void {
+    this.ipcRenderer.send('open-folder-dialog');
+  }
+
   saveMediaList(content: any) {
     let playListPath = getAppDataPath('projscope-player');
 
