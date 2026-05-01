@@ -1,4 +1,4 @@
-export class Song {
+export interface Song {
   title: string;
   path: string;
 }

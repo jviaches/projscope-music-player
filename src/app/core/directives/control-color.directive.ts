@@ -1,12 +1,9 @@
-import { Directive, ElementRef, HostBinding, HostListener, Input } from '@angular/core';
+import { Directive, ElementRef, HostListener, Input } from '@angular/core';
 
 @Directive({
   selector: '[control-color]'
 })
 export class ControlHowerColorDirective {
-  @HostBinding('mouseenter') mouseenter = 'onMouseEnter()';
-  @HostBinding('mouseleave') mouseleave = 'mouseleave()';
-
   @Input('control-color') highlightColor: string;
   @Input() colorChangeDisabled: boolean;
   @Input() detectNoColorChange: boolean;

@@ -1,4 +1,4 @@
-import { app, autoUpdater, BrowserWindow, dialog } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as url from 'url';
@@ -16,7 +16,7 @@ function createWindow(): BrowserWindow {
     x: 0,
     y: 0,
     width: 500,
-    height: 180,
+    height: 680,
     webPreferences: {
       nodeIntegration: true,
       allowRunningInsecureContent: (serve) ? true : false,
@@ -24,13 +24,13 @@ function createWindow(): BrowserWindow {
       plugins: true,
       backgroundThrottling: false,
       nativeWindowOpen: false,
-      webSecurity: false
+      webSecurity: !serve
     },
     titleBarStyle: 'hiddenInset',
     frame: false,
     resizable: false,
     transparent: true,
-    minimizable: false,
+    minimizable: true,
     maximizable: false,
     closable: false,
     icon: path.join(__dirname, '/../src/assets/icons/vinyl.png')
@@ -60,70 +60,6 @@ function createWindow(): BrowserWindow {
     }));
   }
 
-  win.webContents.on('ipc-message', (event, input, args) => {
-
-    if (input === 'open-file-dialog') {
-      dialog.showOpenDialog(null, {
-        properties: ['openFile', 'multiSelections'],
-        filters: [{ name: 'MP3 Media files', extensions: ['mp3'] }],
-      }).then(res => {
-        if (res.filePaths) {
-          win.webContents.send("add-media", res.filePaths);
-        }
-      });
-    }
-
-    if (input === 'open-folder-dialog') {
-      const supportedExtensions = ['.mp3', '.wav', '.ogg', '.flac', '.aac', '.m4a', '.wma', '.webm'];
-
-      dialog.showOpenDialog(null, {
-        title: 'Select music folder',
-        properties: ['openDirectory'],
-      }).then(res => {
-        if (res.filePaths && res.filePaths.length > 0) {
-          const folderPath = res.filePaths[0];
-          const musicFiles: string[] = [];
-
-          const scanFolder = (dirPath: string) => {
-            const entries = fs.readdirSync(dirPath, { withFileTypes: true });
-            for (const entry of entries) {
-              const fullPath = path.join(dirPath, entry.name);
-              if (entry.isDirectory()) {
-                scanFolder(fullPath);
-              } else if (entry.isFile()) {
-                const ext = path.extname(entry.name).toLowerCase();
-                if (supportedExtensions.includes(ext)) {
-                  musicFiles.push(fullPath);
-                }
-              }
-            }
-          };
-
-          scanFolder(folderPath);
-
-          if (musicFiles.length > 0) {
-            win.webContents.send("add-media", musicFiles);
-          }
-        }
-      });
-    }
-
-    if (input === 'resize-app') {
-      win.resizable = true;
-      win.setSize(win.getSize()[0], args);
-      win.resizable = false;
-    }
-
-    if (input === 'minimize-app') {
-      win.minimize();
-    }
-
-    if (input === 'close-app') {
-      // bypass all listeners
-      app.exit(0);
-    }
-  });
-
   // Emitted when the window is closed.
   win.on('closed', () => {
     // Dereference the window object, usually you would store window
@@ -134,6 +70,54 @@ function createWindow(): BrowserWindow {
 
   return win;
 }
+
+const supportedExtensions = ['.mp3', '.wav', '.ogg', '.flac', '.aac', '.m4a', '.wma', '.webm'];
+
+ipcMain.on('open-file-dialog', (event) => {
+  dialog.showOpenDialog(win, {
+    properties: ['openFile', 'multiSelections'],
+    filters: [{ name: 'Music files', extensions: ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma', 'webm'] }],
+  }).then(res => {
+    if (!res.canceled && res.filePaths.length > 0) {
+      event.sender.send('add-media', res.filePaths);
+    }
+  });
+});
+
+ipcMain.on('open-folder-dialog', (event) => {
+  dialog.showOpenDialog(win, {
+    title: 'Select music folder',
+    properties: ['openDirectory'],
+  }).then(res => {
+    if (res.canceled || res.filePaths.length === 0) return;
+    const musicFiles: string[] = [];
+
+    const scanFolder = (dirPath: string) => {
+      const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+      for (const entry of entries) {
+        const fullPath = path.join(dirPath, entry.name);
+        if (entry.isDirectory()) {
+          scanFolder(fullPath);
+        } else if (entry.isFile() && supportedExtensions.includes(path.extname(entry.name).toLowerCase())) {
+          musicFiles.push(fullPath);
+        }
+      }
+    };
+
+    scanFolder(res.filePaths[0]);
+    if (musicFiles.length > 0) event.sender.send('add-media', musicFiles);
+  });
+});
+
+ipcMain.on('resize-app', (_event, height: number) => {
+  win.resizable = true;
+  win.setSize(win.getSize()[0], height);
+  win.resizable = false;
+});
+
+ipcMain.on('minimize-app', () => win.minimize());
+
+ipcMain.on('close-app', () => app.exit(0));
 
 try {
   // This method will be called when Electron has finished
