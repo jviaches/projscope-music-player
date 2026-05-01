@@ -11,11 +11,11 @@ import { Song } from '../models/song.model';
 })
 export class HomeComponent implements OnInit, OnDestroy {
 
-  @ViewChild('player', { static: true }) player: ElementRef;
-  @ViewChild('progressArea', { static: true }) progressArea: ElementRef;
+  @ViewChild('player', { static: true }) player: ElementRef<HTMLAudioElement>;
+  @ViewChild('progressArea', { static: true }) progressArea: ElementRef<HTMLDivElement>;
 
   currentProgress$ = new BehaviorSubject(0);
-  currentTime$ = new Subject();
+  currentTime$ = new Subject<string>();
   songs: Song[] = [];
 
   isPlaying = false;
@@ -39,19 +39,23 @@ export class HomeComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.electronService.windowsResize(660);
 
+    this.electronService.playerState.pipe(takeUntil(this.destroy$)).subscribe(state => {
+      this.volume = state.volume ?? 0.7;
+      this.isShuffleModeOn = state.isShuffleModeOn ?? false;
+      this.isRepeatModeOn = state.isRepeatModeOn ?? false;
+      this.player.nativeElement.volume = this.volume;
+    });
+
     this.electronService.mediaSources.pipe(takeUntil(this.destroy$)).subscribe(receivedMedia => {
       if (!receivedMedia) return;
 
-      let existingSongIndex = -1;
-      if (receivedMedia?.path) {
-        existingSongIndex = this.songs.findIndex(media => media.path === receivedMedia?.path);
-      } else {
-        existingSongIndex = this.songs.findIndex(media => media.path === receivedMedia);
-      }
+      const existingSongIndex = receivedMedia['path']
+        ? this.songs.findIndex(s => s.path === (receivedMedia as Song).path)
+        : this.songs.findIndex(s => s.path === receivedMedia);
 
       if (existingSongIndex === -1) {
-        if (receivedMedia?.path) {
-          this.songs.push(receivedMedia);
+        if (receivedMedia['path']) {
+          this.songs.push(receivedMedia as Song);
         } else {
           this.songs.push({
             path: receivedMedia as string,
@@ -63,12 +67,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
 
     this.electronService.saveStatusChange.pipe(takeUntil(this.destroy$)).subscribe(statusChange => {
-      if (statusChange) {
-        this.electronService.saveMediaList(this.songs);
-      }
+      if (statusChange) this.electronService.saveMediaList(this.songs);
     });
-
-    this.setInitialActiveSong();
   }
 
   ngOnDestroy() {
@@ -106,14 +106,15 @@ export class HomeComponent implements OnInit, OnDestroy {
   playSong(song: Song): void {
     if (!song) return;
 
-    if (!this.isPlaying && this.player.nativeElement.currentTime > 0 && this.activeSong?.path === song.path) {
-      this.player.nativeElement.play();
+    const el = this.player.nativeElement;
+    if (!this.isPlaying && el.currentTime > 0 && !isNaN(el.duration) && this.activeSong?.path === song.path) {
+      el.play();
       this.isPlaying = true;
       return;
     }
 
     this.resetSong(song);
-    this.player.nativeElement.play();
+    el.play();
     this.isPlaying = true;
   }
 
@@ -144,23 +145,31 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   onTimeUpdate() {
+    const el = this.player.nativeElement;
     if (!this.durationTime) this.setSongDuration();
 
-    const mins = this.generateMinutes(this.player.nativeElement.currentTime);
-    const secs = this.generateSeconds(this.player.nativeElement.currentTime);
+    const mins = this.generateMinutes(el.currentTime);
+    const secs = this.generateSeconds(el.currentTime);
     this.currentTime$.next(this.generateTimeToDisplay(mins, secs));
 
-    const pct = this.generatePercentage(this.player.nativeElement.currentTime, this.player.nativeElement.duration);
-    if (!isNaN(pct)) this.currentProgress$.next(pct);
+    const pct = this.generatePercentage(el.currentTime, el.duration);
+    if (!isNaN(pct) && isFinite(pct)) this.currentProgress$.next(pct);
+  }
+
+  onLoadedMetadata(): void {
+    this.setSongDuration();
   }
 
   onPause(): void {
     this.isPlaying = false;
   }
 
-  onEnded() {
+  onEnded(): void {
     if (this.isShuffleModeOn) {
       this.playRandomSong();
+    } else if (this.isRepeatModeOn) {
+      // repeat-all: wrap around to first track when last track ends
+      this.playSong(this.songs[0]);
     } else {
       this.playNextSong();
     }
@@ -171,12 +180,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     const idx = this.songs.findIndex(s => s.path === this.activeSong?.path);
     if (idx === -1) return;
 
-    if (this.isShuffleModeOn) { this.playRandomSong(); return; }
-
     const nextIdx = idx + 1;
-    if (nextIdx === this.songs.length && this.isRepeatModeOn) {
-      this.playSong(this.songs[0]);
-    } else if (nextIdx < this.songs.length) {
+    if (nextIdx < this.songs.length) {
       this.playSong(this.songs[nextIdx]);
     }
   }
@@ -184,23 +189,30 @@ export class HomeComponent implements OnInit, OnDestroy {
   playPreviousSong(): void {
     if (this.songs.length < 2) return;
     const idx = this.songs.findIndex(s => s.path === this.activeSong?.path);
-    if (idx === -1) return;
-    if (idx - 1 >= 0) this.playSong(this.songs[idx - 1]);
+    if (idx === -1 || idx === 0) return;
+    this.playSong(this.songs[idx - 1]);
   }
 
   seekToTime(event: MouseEvent) {
     const offsetWidth = this.progressArea.nativeElement.clientWidth;
-    const pct = this.generatePercentage(event.offsetX, offsetWidth);
-    if (!isNaN(pct)) {
-      this.player.nativeElement.currentTime = pct * this.player.nativeElement.duration / 100;
+    const el = this.player.nativeElement;
+    if (!isNaN(el.duration) && offsetWidth > 0) {
+      const pct = Math.max(0, Math.min(1, event.offsetX / offsetWidth));
+      el.currentTime = pct * el.duration;
     }
   }
 
   // ─── Controls ────────────────────────────────────────────────
 
-  toggleShuffleMode() { this.isShuffleModeOn = !this.isShuffleModeOn; }
+  toggleShuffleMode() {
+    this.isShuffleModeOn = !this.isShuffleModeOn;
+    this.persistPlayerState();
+  }
 
-  setRepeatMode() { this.isRepeatModeOn = !this.isRepeatModeOn; }
+  setRepeatMode() {
+    this.isRepeatModeOn = !this.isRepeatModeOn;
+    this.persistPlayerState();
+  }
 
   toggleMute() {
     this.isMuted = !this.isMuted;
@@ -214,6 +226,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       this.isMuted = false;
       this.player.nativeElement.muted = false;
     }
+    this.persistPlayerState();
   }
 
   // ─── Drag reorder ────────────────────────────────────────────
@@ -280,11 +293,12 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.activeSong = song;
     this.isPlaying = false;
     this.currentProgress$.next(0);
+    this.currentTime$.next('0:00');
   }
 
   private setSongDuration(): void {
     const dur = this.player.nativeElement.duration;
-    if (!isNaN(dur)) {
+    if (!isNaN(dur) && isFinite(dur)) {
       this.durationTime = this.generateTimeToDisplay(
         this.generateMinutes(dur),
         this.generateSeconds(dur)
@@ -294,12 +308,12 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private generateMinutes(t: number): number { return Math.floor(t / 60); }
 
-  private generateSeconds(t: number): number | string {
+  private generateSeconds(t: number): string {
     const s = Math.floor(t % 60);
-    return s < 10 ? '0' + s : s;
+    return s < 10 ? '0' + s : String(s);
   }
 
-  private generateTimeToDisplay(m: number, s: number | string): string {
+  private generateTimeToDisplay(m: number, s: string): string {
     return `${m}:${s}`;
   }
 
@@ -307,8 +321,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     return Math.round((current / total) * 100);
   }
 
-  private extractFileNameFromPath(path: string): string {
-    return path?.length ? path.split('\\').pop().split('/').pop() : '';
+  private extractFileNameFromPath(filePath: string): string {
+    return filePath?.length ? filePath.split('\\').pop().split('/').pop() : '';
   }
 
   private playRandomSong() {
@@ -324,5 +338,13 @@ export class HomeComponent implements OnInit, OnDestroy {
     if (this.songs.length > 0 && !this.activeSong) {
       this.resetSong(this.songs[0]);
     }
+  }
+
+  private persistPlayerState() {
+    this.electronService.savePlayerState({
+      volume: this.volume,
+      isShuffleModeOn: this.isShuffleModeOn,
+      isRepeatModeOn: this.isRepeatModeOn,
+    });
   }
 }

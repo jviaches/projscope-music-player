@@ -1,1 +1,1 @@
-export * from './webview/webview.directive';
+// No shared directives currently exported

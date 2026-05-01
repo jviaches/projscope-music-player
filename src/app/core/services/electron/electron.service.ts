@@ -7,6 +7,12 @@ import { Subject } from 'rxjs';
 import { Song } from '../../../models/song.model';
 import * as path from 'path';
 
+export interface PlayerState {
+  volume: number;
+  isShuffleModeOn: boolean;
+  isRepeatModeOn: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -19,8 +25,10 @@ export class ElectronService {
   // Subject (not BehaviorSubject) — no null replay to new subscribers
   mediaSources = new Subject<Song | string>();
   saveStatusChange = new Subject<boolean>();
+  playerState = new Subject<PlayerState>();
 
   playListFileName = 'playlist.cfg';
+  playerStateFileName = 'player-state.cfg';
 
   constructor(private ngZone: NgZone) {
     if (this.isElectron) {
@@ -30,6 +38,7 @@ export class ElectronService {
       this.fs = window.require('fs');
 
       this.loadMediaList();
+      this.loadPlayerState();
 
       this.ipcRenderer.on('add-media', (event, arg: string[]) => {
         this.ngZone.run(() => {
@@ -82,13 +91,20 @@ export class ElectronService {
     });
   }
 
+  savePlayerState(state: PlayerState) {
+    if (!this.isElectron) return;
+    const filePath = this.getStateFilePath();
+    this.fs.writeFile(filePath, JSON.stringify(state), (err) => {
+      if (err) console.error('Could not save player state:', err);
+    });
+  }
+
   loadMediaList() {
     if (!this.isElectron) return;
     const filePath = this.getPlaylistFilePath();
 
     this.fs.readFile(filePath, 'utf-8', (err, data) => {
       if (err) {
-        // File simply doesn't exist yet — not an error worth logging
         if (err.code !== 'ENOENT') console.error('Could not load playlist:', err);
         return;
       }
@@ -101,18 +117,39 @@ export class ElectronService {
     });
   }
 
+  loadPlayerState() {
+    if (!this.isElectron) return;
+    const filePath = this.getStateFilePath();
+
+    this.fs.readFile(filePath, 'utf-8', (err, data) => {
+      if (err) {
+        if (err.code !== 'ENOENT') console.error('Could not load player state:', err);
+        return;
+      }
+      try {
+        const state: PlayerState = JSON.parse(data);
+        this.ngZone.run(() => this.playerState.next(state));
+      } catch {
+        // corrupt state file — ignore, defaults will be used
+      }
+    });
+  }
+
   private getPlaylistFilePath(): string {
     try {
-      // @electron/remote exposes app.getPath in the renderer process
       const { app } = window.require('@electron/remote');
       return path.join(app.getPath('userData'), this.playListFileName);
     } catch {
-      // Fallback for non-Electron / dev environments
       return this.playListFileName;
     }
   }
 
-  private triggerMediaSourceChanges(data: Song[]) {
-    data.forEach(item => this.mediaSources.next(item));
+  private getStateFilePath(): string {
+    try {
+      const { app } = window.require('@electron/remote');
+      return path.join(app.getPath('userData'), this.playerStateFileName);
+    } catch {
+      return this.playerStateFileName;
+    }
   }
 }
