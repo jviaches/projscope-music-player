@@ -2,6 +2,8 @@ import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as url from 'url';
+import * as https from 'https';
+import * as http from 'http';
 import * as remoteMain from '@electron/remote/main';
 
 let win: BrowserWindow = null;
@@ -11,7 +13,6 @@ const args = process.argv.slice(1),
 
 function createWindow(): BrowserWindow {
 
-  // Create the browser window.
   win = new BrowserWindow({
     x: 0,
     y: 0,
@@ -20,7 +21,7 @@ function createWindow(): BrowserWindow {
     webPreferences: {
       nodeIntegration: true,
       allowRunningInsecureContent: serve,
-      contextIsolation: false,  // false if you want to run e2e test with Spectron
+      contextIsolation: false,
       plugins: true,
       backgroundThrottling: false,
       nativeWindowOpen: false,
@@ -45,14 +46,10 @@ function createWindow(): BrowserWindow {
     });
     win.loadURL('http://localhost:4200');
   } else {
-    // Path when running electron executable
     let pathIndex = './index.html';
-
     if (fs.existsSync(path.join(__dirname, '../dist/index.html'))) {
-      // Path when running electron in local folder
       pathIndex = '../dist/index.html';
     }
-
     win.loadURL(url.format({
       pathname: path.join(__dirname, pathIndex),
       protocol: 'file:',
@@ -60,16 +57,77 @@ function createWindow(): BrowserWindow {
     }));
   }
 
-  // Emitted when the window is closed.
-  win.on('closed', () => {
-    // Dereference the window object, usually you would store window
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
-    win = null;
-  });
+  win.on('closed', () => { win = null; });
 
   return win;
 }
+
+// ─── RSS / Atom feed parser (regex-based; DOMParser not available in Node) ───
+
+interface RssEpisode { title: string; url: string; }
+interface RssFeedResult { feedTitle: string; episodes: RssEpisode[]; error?: string; }
+
+function parseRssFeed(xml: string): RssFeedResult {
+  const episodes: RssEpisode[] = [];
+
+  // Feed title: RSS 2.0 channel title or Atom feed title
+  const feedTitleMatch =
+    xml.match(/<channel[^>]*>[\s\S]*?<title[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/i) ||
+    xml.match(/<feed[^>]*>[\s\S]*?<title[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/i);
+  const feedTitle = feedTitleMatch ? feedTitleMatch[1].trim() : 'Podcast Feed';
+
+  // RSS 2.0: <item> blocks with <enclosure type="audio/...">
+  const itemRegex = /<item[^>]*>([\s\S]*?)<\/item>/gi;
+  let m: RegExpExecArray;
+  while ((m = itemRegex.exec(xml)) !== null) {
+    const block = m[1];
+    const enclosure =
+      block.match(/<enclosure[^>]+url=["']([^"']+)["'][^>]*type=["']audio[^"']*["']/i) ||
+      block.match(/<enclosure[^>]+type=["']audio[^"']*["'][^>]+url=["']([^"']+)["']/i);
+    const titleM = block.match(/<title[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/i);
+    if (enclosure) {
+      episodes.push({ title: titleM ? titleM[1].trim() : 'Untitled Episode', url: enclosure[1] });
+    }
+  }
+
+  // Atom fallback: <entry> blocks with <link rel="enclosure" type="audio/...">
+  if (episodes.length === 0) {
+    const entryRegex = /<entry[^>]*>([\s\S]*?)<\/entry>/gi;
+    while ((m = entryRegex.exec(xml)) !== null) {
+      const block = m[1];
+      const link =
+        block.match(/<link[^>]+rel=["']enclosure["'][^>]+href=["']([^"']+)["'][^>]*type=["']audio[^"']*["']/i) ||
+        block.match(/<link[^>]+type=["']audio[^"']*["'][^>]+href=["']([^"']+)["']/i);
+      const titleM = block.match(/<title[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/i);
+      if (link) {
+        episodes.push({ title: titleM ? titleM[1].trim() : 'Untitled Episode', url: link[1] });
+      }
+    }
+  }
+
+  return { feedTitle, episodes };
+}
+
+function fetchUrl(feedUrl: string, cb: (err: string | null, body: string) => void): void {
+  const mod = feedUrl.startsWith('https') ? https : http;
+  let raw = '';
+
+  const req = mod.get(feedUrl, (res) => {
+    // Follow single redirect
+    if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+      fetchUrl(res.headers.location as string, cb);
+      return;
+    }
+    res.setEncoding('utf8');
+    res.on('data', (chunk: string) => { raw += chunk; });
+    res.on('end', () => cb(null, raw));
+  });
+
+  req.on('error', (err) => cb(err.message, ''));
+  req.setTimeout(15000, () => { req.destroy(); cb('Request timed out', ''); });
+}
+
+// ─── IPC handlers ────────────────────────────────────────────────────────────
 
 const supportedExtensions = ['.mp3', '.wav', '.ogg', '.flac', '.aac', '.m4a', '.wma', '.webm'];
 
@@ -119,31 +177,52 @@ ipcMain.on('minimize-app', () => win.minimize());
 
 ipcMain.on('close-app', () => app.exit(0));
 
+ipcMain.on('fetch-rss-feed', (event, feedUrl: string) => {
+  fetchUrl(feedUrl, (err, body) => {
+    if (err) {
+      event.sender.send('rss-feed-result', { feedTitle: '', episodes: [], error: err });
+      return;
+    }
+    event.sender.send('rss-feed-result', parseRssFeed(body));
+  });
+});
+
+ipcMain.on('validate-stream-url', (event, streamUrl: string) => {
+  try {
+    const parsed = new URL(streamUrl);
+    const mod = parsed.protocol === 'https:' ? https : http;
+    const options = {
+      hostname: parsed.hostname,
+      port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
+      path: parsed.pathname + parsed.search,
+      method: 'HEAD',
+    };
+    const req = mod.request(options, (res) => {
+      const ct = (res.headers['content-type'] || '').toLowerCase();
+      const isAudio = ct.includes('audio') || ct.includes('ogg') || ct.includes('mpeg')
+        || ct.includes('octet-stream') || ct.includes('rss') || ct.includes('xml');
+      event.sender.send('stream-url-validation-result', { ok: res.statusCode < 400, contentType: ct, isAudio });
+    });
+    req.on('error', (err) => event.sender.send('stream-url-validation-result', { ok: false, error: err.message }));
+    req.setTimeout(8000, () => { req.destroy(); event.sender.send('stream-url-validation-result', { ok: false, error: 'Timeout' }); });
+    req.end();
+  } catch (err) {
+    event.sender.send('stream-url-validation-result', { ok: false, error: String(err) });
+  }
+});
+
+// ─── App lifecycle ────────────────────────────────────────────────────────────
+
 try {
-  // This method will be called when Electron has finished
-  // initialization and is ready to create browser windows.
-  // Some APIs can only be used after this event occurs.
-  // Added 400 ms to fix the black background issue while using transparent window. More detais at https://github.com/electron/electron/issues/15947
   app.on('ready', () => setTimeout(createWindow, 400));
 
-  // Quit when all windows are closed.
   app.on('window-all-closed', () => {
-    // On OS X it is common for applications and their menu bar
-    // to stay active until the user quits explicitly with Cmd + Q
-    if (process.platform !== 'darwin') {
-      app.quit();
-    }
+    if (process.platform !== 'darwin') app.quit();
   });
 
   app.on('activate', () => {
-    // On OS X it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (win === null) {
-      createWindow();
-    }
+    if (win === null) createWindow();
   });
-
 } catch (e) {
   // Catch Error
-  // throw e;
 }

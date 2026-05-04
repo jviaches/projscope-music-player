@@ -1,7 +1,7 @@
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-import { ElectronService } from '../core/services';
+import { take, takeUntil } from 'rxjs/operators';
+import { ElectronService, RssEpisode } from '../core/services';
 import { Song } from '../models/song.model';
 
 @Component({
@@ -28,6 +28,15 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   isShuffleModeOn = false;
   isRepeatModeOn = false;
+
+  showUrlOverlay = false;
+  urlInput = '';
+  urlInputError = '';
+  urlIsValidating = false;
+  rssFeedTitle = '';
+  rssEpisodes: RssEpisode[] = [];
+  showRssChooser = false;
+  isLiveStream = false;
 
   vinylGrooves = [0, 1, 2, 3, 4, 5];
   dragFromIndex: number | null = null;
@@ -194,6 +203,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   seekToTime(event: MouseEvent) {
+    if (this.isLiveStream) return;
     const offsetWidth = this.progressArea.nativeElement.clientWidth;
     const el = this.player.nativeElement;
     if (!isNaN(el.duration) && offsetWidth > 0) {
@@ -274,8 +284,126 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   addMediaFiles() { this.electronService.openFileDialog(); }
   addMediaFolder() { this.electronService.openFolderDialog(); }
+  addStreamUrl() { this.openUrlOverlay(); }
   closeProgram() { this.electronService.closeProgram(); }
   minimizeProgram() { this.electronService.minimizeProgram(); }
+
+  // ─── URL / Stream overlay ────────────────────────────────────
+
+  openUrlOverlay() {
+    this.urlInput = '';
+    this.urlInputError = '';
+    this.urlIsValidating = false;
+    this.rssFeedTitle = '';
+    this.rssEpisodes = [];
+    this.showRssChooser = false;
+    this.showUrlOverlay = true;
+  }
+
+  closeUrlOverlay() {
+    this.showUrlOverlay = false;
+    this.showRssChooser = false;
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapeKey() {
+    if (this.showUrlOverlay) {
+      this.closeUrlOverlay();
+    } else {
+      this.showVolumeSlider = false;
+    }
+  }
+
+  submitUrl() {
+    const url = this.urlInput.trim();
+    if (!this.isValidHttpUrl(url)) {
+      this.urlInputError = 'Please enter a valid http:// or https:// URL.';
+      return;
+    }
+    this.urlInputError = '';
+    if (this.looksLikeRssFeed(url)) {
+      this.handleRssFeedUrl(url);
+    } else {
+      this.handleDirectStreamUrl(url);
+    }
+  }
+
+  handleDirectStreamUrl(url: string) {
+    if (this.songs.some(s => s.path === url)) {
+      this.urlInputError = 'This URL is already in your playlist.';
+      return;
+    }
+    const song: Song = { title: this.deriveTitleFromUrl(url), path: url, type: 'stream' };
+    this.songs.push(song);
+    this.electronService.saveMediaList(this.songs);
+    this.setInitialActiveSong();
+    this.closeUrlOverlay();
+  }
+
+  handleRssFeedUrl(url: string) {
+    this.urlIsValidating = true;
+    this.electronService.rssFeedResult.pipe(take(1), takeUntil(this.destroy$)).subscribe(result => {
+      this.urlIsValidating = false;
+      if (result.error) {
+        this.urlInputError = `Could not load feed: ${result.error}`;
+        return;
+      }
+      if (result.episodes.length === 0) {
+        this.urlInputError = 'No audio episodes found in this feed.';
+        return;
+      }
+      this.rssFeedTitle = result.feedTitle;
+      this.rssEpisodes = result.episodes;
+      this.showRssChooser = true;
+    });
+    this.electronService.fetchRssFeed(url);
+  }
+
+  addRssEpisode(ep: RssEpisode) {
+    if (this.songs.some(s => s.path === ep.url)) return;
+    const song: Song = { title: ep.title, path: ep.url, type: 'stream' };
+    this.songs.push(song);
+    this.electronService.saveMediaList(this.songs);
+    this.setInitialActiveSong();
+  }
+
+  addAllRssEpisodes() {
+    let added = false;
+    for (const ep of this.rssEpisodes) {
+      if (!this.songs.some(s => s.path === ep.url)) {
+        this.songs.push({ title: ep.title, path: ep.url, type: 'stream' });
+        added = true;
+      }
+    }
+    if (added) {
+      this.electronService.saveMediaList(this.songs);
+      this.setInitialActiveSong();
+    }
+    this.closeUrlOverlay();
+  }
+
+  isSongInPlaylist(url: string): boolean {
+    return this.songs.some(s => s.path === url);
+  }
+
+  private isValidHttpUrl(v: string): boolean {
+    return /^https?:\/\/.{3,}/.test(v);
+  }
+
+  private looksLikeRssFeed(v: string): boolean {
+    return /\.(rss|xml|atom)(\?|$)/i.test(v) || /[/?&]feed([/?&=]|$)/i.test(v);
+  }
+
+  private deriveTitleFromUrl(url: string): string {
+    try {
+      const u = new URL(url);
+      const segments = u.pathname.split('/').filter(Boolean);
+      const last = segments[segments.length - 1] || u.hostname;
+      return decodeURIComponent(last.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '));
+    } catch {
+      return url;
+    }
+  }
 
   // ─── Private ─────────────────────────────────────────────────
 
@@ -287,6 +415,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private resetSong(song: Song) {
     if (!song) return;
+    this.isLiveStream = false;
     this.durationTime = undefined;
     this.player.nativeElement.src = song.path;
     this.player.nativeElement.load();
@@ -298,6 +427,11 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private setSongDuration(): void {
     const dur = this.player.nativeElement.duration;
+    if (!isFinite(dur)) {
+      this.isLiveStream = true;
+      this.durationTime = undefined;
+      return;
+    }
     if (!isNaN(dur) && isFinite(dur)) {
       this.durationTime = this.generateTimeToDisplay(
         this.generateMinutes(dur),

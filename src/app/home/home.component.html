@@ -31,11 +31,12 @@
         <div class="cover-art" [style.background]="getCoverGradient()">
           <div class="cover-overlay"></div>
           <div class="cover-monogram">{{ getCoverMonogram() }}</div>
-          <div class="eq-badge" *ngIf="isPlaying">
+          <div class="eq-badge" *ngIf="isPlaying && !isLiveStream">
             <div class="eq-bar"></div>
             <div class="eq-bar" style="animation-delay: 0.15s"></div>
             <div class="eq-bar" style="animation-delay: 0.3s"></div>
           </div>
+          <div class="live-badge-cover" *ngIf="isLiveStream && isPlaying">LIVE</div>
         </div>
       </div>
 
@@ -131,12 +132,15 @@
     <div class="progress-wrap" style="-webkit-app-region: no-drag">
       <div class="progress-track" #progressArea (click)="seekToTime($event)">
         <div class="progress-bg"></div>
-        <div class="progress-fill" [style.width.%]="currentProgress$ | async"></div>
-        <div class="progress-thumb" [style.left.%]="currentProgress$ | async"></div>
+        <div class="progress-fill" [style.width.%]="currentProgress$ | async"
+          [style.opacity]="isLiveStream ? 0 : 1"></div>
+        <div class="progress-thumb" [style.left.%]="currentProgress$ | async"
+          [style.opacity]="isLiveStream ? 0 : 1"></div>
       </div>
       <div class="progress-times">
         <span>{{ currentTime$ | async }}</span>
-        <span>{{ durationTime || '0:00' }}</span>
+        <span class="live-badge" *ngIf="isLiveStream">LIVE</span>
+        <span *ngIf="!isLiveStream">{{ durationTime || '0:00' }}</span>
       </div>
     </div>
 
@@ -172,6 +176,13 @@
             <div class="eq-bar-small" style="animation-delay: 0.15s"></div>
             <div class="eq-bar-small" style="animation-delay: 0.3s"></div>
           </div>
+          <svg *ngIf="song.type === 'stream' && !(song.path === activeSong?.path && isPlaying)"
+            class="stream-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="12" height="12">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M2 12h20"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          </svg>
           <span class="track-name">{{ displaySongTitle(song.title) }}</span>
         </div>
 
@@ -188,6 +199,52 @@
       <div class="empty-msg" *ngIf="songs.length === 0">Your library is empty.</div>
     </div>
 
+    <!-- URL Overlay -->
+    <ng-container *ngIf="showUrlOverlay">
+      <div class="url-overlay-backdrop" (click)="closeUrlOverlay()"></div>
+      <div class="url-overlay-panel" (click)="$event.stopPropagation()">
+
+        <!-- URL input form -->
+        <ng-container *ngIf="!showRssChooser">
+          <div class="url-overlay-title">Add Stream or Podcast</div>
+          <p class="url-overlay-hint">Enter a stream URL, direct audio link, or RSS/podcast feed.</p>
+          <input class="url-input" type="url" placeholder="https://..."
+            [(ngModel)]="urlInput"
+            (keydown.enter)="submitUrl()"
+            autofocus />
+          <span class="url-error" *ngIf="urlInputError">{{ urlInputError }}</span>
+          <div class="url-overlay-actions">
+            <button class="url-cancel-btn" (click)="closeUrlOverlay()">Cancel</button>
+            <button class="url-submit-btn" (click)="submitUrl()" [disabled]="urlIsValidating">
+              {{ urlIsValidating ? 'Loading…' : 'Add' }}
+            </button>
+          </div>
+        </ng-container>
+
+        <!-- RSS episode chooser -->
+        <ng-container *ngIf="showRssChooser">
+          <div class="url-overlay-title">{{ rssFeedTitle }}</div>
+          <p class="url-overlay-hint">{{ rssEpisodes.length }} episode{{ rssEpisodes.length === 1 ? '' : 's' }} found. Click to add individually.</p>
+          <div class="rss-episode-list">
+            <div class="rss-episode-row" *ngFor="let ep of rssEpisodes"
+              (click)="addRssEpisode(ep)"
+              [class.already-added]="isSongInPlaylist(ep.url)">
+              <span class="rss-episode-title">{{ ep.title }}</span>
+              <svg class="rss-add-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" width="14" height="14">
+                <path d="M12 5v14M5 12h14"/>
+              </svg>
+            </div>
+          </div>
+          <div class="url-overlay-actions">
+            <button class="url-cancel-btn" (click)="closeUrlOverlay()">Cancel</button>
+            <button class="url-submit-btn" (click)="addAllRssEpisodes()">Add All</button>
+          </div>
+        </ng-container>
+
+      </div>
+    </ng-container>
+
     <!-- Footer -->
     <div class="player-footer" style="-webkit-app-region: no-drag">
       <button class="footer-btn" (click)="addMediaFiles()">
@@ -203,6 +260,14 @@
           <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
         </svg>
         Add Folder
+      </button>
+      <button class="footer-btn" (click)="addStreamUrl()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+          stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+        Add Stream
       </button>
     </div>
 

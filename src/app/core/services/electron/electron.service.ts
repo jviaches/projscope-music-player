@@ -13,6 +13,17 @@ export interface PlayerState {
   isRepeatModeOn: boolean;
 }
 
+export interface RssEpisode {
+  title: string;
+  url: string;
+}
+
+export interface RssFeedResult {
+  feedTitle: string;
+  episodes: RssEpisode[];
+  error?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -26,6 +37,7 @@ export class ElectronService {
   mediaSources = new Subject<Song | string>();
   saveStatusChange = new Subject<boolean>();
   playerState = new Subject<PlayerState>();
+  rssFeedResult = new Subject<RssFeedResult>();
 
   playListFileName = 'playlist.cfg';
   playerStateFileName = 'player-state.cfg';
@@ -47,6 +59,10 @@ export class ElectronService {
             this.saveStatusChange.next(true);
           });
         });
+      });
+
+      this.ipcRenderer.on('rss-feed-result', (_event, result: RssFeedResult) => {
+        this.ngZone.run(() => this.rssFeedResult.next(result));
       });
     }
   }
@@ -73,6 +89,10 @@ export class ElectronService {
 
   openFolderDialog(): void {
     this.ipcRenderer.send('open-folder-dialog');
+  }
+
+  fetchRssFeed(feedUrl: string): void {
+    if (this.isElectron) this.ipcRenderer.send('fetch-rss-feed', feedUrl);
   }
 
   saveMediaList(content: Song[]) {

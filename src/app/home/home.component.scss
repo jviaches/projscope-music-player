@@ -523,3 +523,183 @@
     color: var(--theme-color);
   }
 }
+
+/* ─── URL / Stream overlay ─── */
+.url-overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.url-overlay-panel {
+  position: absolute;
+  left: 22px;
+  right: 22px;
+  bottom: 64px;
+  z-index: 40;
+  background: var(--background-color);
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  padding: 18px 18px 14px;
+  animation: float-in 0.15s ease;
+}
+
+.url-overlay-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.url-overlay-hint {
+  font-size: 12px;
+  color: var(--subtle-color);
+  margin: 0 0 10px;
+}
+
+.url-input {
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-color);
+  background: var(--background-color);
+  outline: none;
+  -webkit-user-select: text;
+  user-select: text;
+  transition: border-color 0.15s;
+
+  &:focus {
+    border-color: var(--theme-color);
+  }
+}
+
+.url-error {
+  display: block;
+  font-size: 12px;
+  color: #e53e3e;
+  margin-top: 6px;
+}
+
+.url-overlay-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.url-cancel-btn {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--subtle-color);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+
+  &:hover {
+    color: var(--text-color);
+    border-color: var(--text-color);
+  }
+}
+
+.url-submit-btn {
+  background: var(--theme-color);
+  border: none;
+  border-radius: 8px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 500;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.15s;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
+/* ─── RSS episode list ─── */
+.rss-episode-list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin: 0 -4px;
+}
+
+.rss-episode-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.12s;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+
+    .rss-add-icon { opacity: 1; }
+  }
+
+  &.already-added {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.rss-episode-title {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rss-add-icon {
+  flex-shrink: 0;
+  color: var(--theme-color);
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+/* ─── Live stream badges ─── */
+.live-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #e53e3e;
+  background: rgba(229, 62, 62, 0.1);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+.live-badge-cover {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #fff;
+  background: #e53e3e;
+  border-radius: 4px;
+  padding: 2px 5px;
+}
+
+/* ─── Stream icon in track list ─── */
+.stream-icon {
+  flex-shrink: 0;
+  color: var(--subtle-color);
+  opacity: 0.7;
+}
