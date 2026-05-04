@@ -11,7 +11,8 @@
     "!**/*.ts",
     "!*.map",
     "!package.json",
-    "!package-lock.json"
+    "!package-lock.json",
+    "!app/node_modules"
   ],
   "extraResources": [
     {
