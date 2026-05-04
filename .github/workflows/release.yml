@@ -32,7 +32,7 @@ jobs:
       - name: Package & publish Windows
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: electron-builder build --win --publish always
+        run: npx electron-builder build --win --publish always
 
   release-linux:
     runs-on: ubuntu-latest
@@ -64,4 +64,4 @@ jobs:
       - name: Package & publish Linux
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: electron-builder build --linux --publish always
+        run: npx electron-builder build --linux --publish always
