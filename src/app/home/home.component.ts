@@ -56,14 +56,15 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
 
     this.electronService.mediaSources.pipe(takeUntil(this.destroy$)).subscribe(receivedMedia => {
-      if (!receivedMedia) return;
+      if (!receivedMedia) { return; }
 
-      const existingSongIndex = receivedMedia['path']
+      const isSong = typeof receivedMedia !== 'string';
+      const existingSongIndex = isSong
         ? this.songs.findIndex(s => s.path === (receivedMedia as Song).path)
         : this.songs.findIndex(s => s.path === receivedMedia);
 
       if (existingSongIndex === -1) {
-        if (receivedMedia['path']) {
+        if (isSong) {
           this.songs.push(receivedMedia as Song);
         } else {
           this.songs.push({
@@ -76,13 +77,22 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
 
     this.electronService.saveStatusChange.pipe(takeUntil(this.destroy$)).subscribe(statusChange => {
-      if (statusChange) this.electronService.saveMediaList(this.songs);
+      if (statusChange) { this.electronService.saveMediaList(this.songs); }
     });
   }
 
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapeKey() {
+    if (this.showUrlOverlay) {
+      this.closeUrlOverlay();
+    } else {
+      this.showVolumeSlider = false;
+    }
   }
 
   // ─── Cover art helpers ───────────────────────────────────────
@@ -98,7 +108,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   displaySongTitle(songName: string): string {
-    if (!songName) return '';
+    if (!songName) { return ''; }
     return songName.length > 45 ? songName.substring(0, 45) + '...' : songName;
   }
 
@@ -113,7 +123,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   playSong(song: Song): void {
-    if (!song) return;
+    if (!song) { return; }
 
     const el = this.player.nativeElement;
     if (!this.isPlaying && el.currentTime > 0 && !isNaN(el.duration) && this.activeSong?.path === song.path) {
@@ -129,12 +139,12 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   playSongFromPlaylist(songPath: string): void {
     const song = this.songs.find(s => s.path === songPath);
-    if (song) this.playSong(song);
+    if (song) { this.playSong(song); }
   }
 
   deleteSongFromPlaylist(songPath: string): void {
     const songIndex = this.songs.findIndex(s => s.path === songPath);
-    if (songIndex === -1) return;
+    if (songIndex === -1) { return; }
 
     const wasActive = this.activeSong?.path === songPath;
     this.songs.splice(songIndex, 1);
@@ -155,14 +165,14 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   onTimeUpdate() {
     const el = this.player.nativeElement;
-    if (!this.durationTime) this.setSongDuration();
+    if (!this.durationTime) { this.setSongDuration(); }
 
     const mins = this.generateMinutes(el.currentTime);
     const secs = this.generateSeconds(el.currentTime);
     this.currentTime$.next(this.generateTimeToDisplay(mins, secs));
 
     const pct = this.generatePercentage(el.currentTime, el.duration);
-    if (!isNaN(pct) && isFinite(pct)) this.currentProgress$.next(pct);
+    if (!isNaN(pct) && isFinite(pct)) { this.currentProgress$.next(pct); }
   }
 
   onLoadedMetadata(): void {
@@ -177,7 +187,6 @@ export class HomeComponent implements OnInit, OnDestroy {
     if (this.isShuffleModeOn) {
       this.playRandomSong();
     } else if (this.isRepeatModeOn) {
-      // repeat-all: wrap around to first track when last track ends
       this.playSong(this.songs[0]);
     } else {
       this.playNextSong();
@@ -185,9 +194,9 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   playNextSong(): void {
-    if (this.songs.length < 2) return;
+    if (this.songs.length < 2) { return; }
     const idx = this.songs.findIndex(s => s.path === this.activeSong?.path);
-    if (idx === -1) return;
+    if (idx === -1) { return; }
 
     const nextIdx = idx + 1;
     if (nextIdx < this.songs.length) {
@@ -196,14 +205,14 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   playPreviousSong(): void {
-    if (this.songs.length < 2) return;
+    if (this.songs.length < 2) { return; }
     const idx = this.songs.findIndex(s => s.path === this.activeSong?.path);
-    if (idx === -1 || idx === 0) return;
+    if (idx === -1 || idx === 0) { return; }
     this.playSong(this.songs[idx - 1]);
   }
 
   seekToTime(event: MouseEvent) {
-    if (this.isLiveStream) return;
+    if (this.isLiveStream) { return; }
     const offsetWidth = this.progressArea.nativeElement.clientWidth;
     const el = this.player.nativeElement;
     if (!isNaN(el.duration) && offsetWidth > 0) {
@@ -305,15 +314,6 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.showRssChooser = false;
   }
 
-  @HostListener('document:keydown.escape')
-  onEscapeKey() {
-    if (this.showUrlOverlay) {
-      this.closeUrlOverlay();
-    } else {
-      this.showVolumeSlider = false;
-    }
-  }
-
   submitUrl() {
     const url = this.urlInput.trim();
     if (!this.isValidHttpUrl(url)) {
@@ -360,7 +360,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   addRssEpisode(ep: RssEpisode) {
-    if (this.songs.some(s => s.path === ep.url)) return;
+    if (this.songs.some(s => s.path === ep.url)) { return; }
     const song: Song = { title: ep.title, path: ep.url, type: 'stream' };
     this.songs.push(song);
     this.electronService.saveMediaList(this.songs);
@@ -409,12 +409,12 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private hashHue(s: string): number {
     let h = 0;
-    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
+    for (let i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) % 360; }
     return h;
   }
 
   private resetSong(song: Song) {
-    if (!song) return;
+    if (!song) { return; }
     this.isLiveStream = false;
     this.durationTime = undefined;
     this.player.nativeElement.src = song.path;
@@ -432,7 +432,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       this.durationTime = undefined;
       return;
     }
-    if (!isNaN(dur) && isFinite(dur)) {
+    if (!isNaN(dur)) {
       this.durationTime = this.generateTimeToDisplay(
         this.generateMinutes(dur),
         this.generateSeconds(dur)
@@ -460,7 +460,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   private playRandomSong() {
-    if (this.songs.length <= 1) return;
+    if (this.songs.length <= 1) { return; }
     let idx = Math.floor(Math.random() * this.songs.length);
     while (this.songs[idx]?.path === this.activeSong?.path) {
       idx = Math.floor(Math.random() * this.songs.length);

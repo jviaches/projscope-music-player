@@ -72,15 +72,15 @@ export class ElectronService {
   }
 
   closeProgram() {
-    if (this.isElectron) this.ipcRenderer.send('close-app', true);
+    if (this.isElectron) { this.ipcRenderer.send('close-app', true); }
   }
 
   minimizeProgram() {
-    if (this.isElectron) this.ipcRenderer.send('minimize-app', true);
+    if (this.isElectron) { this.ipcRenderer.send('minimize-app', true); }
   }
 
   windowsResize(height: number) {
-    if (this.isElectron) this.ipcRenderer.send('resize-app', height);
+    if (this.isElectron) { this.ipcRenderer.send('resize-app', height); }
   }
 
   openFileDialog(): void {
@@ -92,11 +92,11 @@ export class ElectronService {
   }
 
   fetchRssFeed(feedUrl: string): void {
-    if (this.isElectron) this.ipcRenderer.send('fetch-rss-feed', feedUrl);
+    if (this.isElectron) { this.ipcRenderer.send('fetch-rss-feed', feedUrl); }
   }
 
   saveMediaList(content: Song[]) {
-    if (!this.isElectron) return;
+    if (!this.isElectron) { return; }
     const filePath = this.getPlaylistFilePath();
     const dir = path.dirname(filePath);
 
@@ -106,26 +106,26 @@ export class ElectronService {
         return;
       }
       this.fs.writeFile(filePath, JSON.stringify(content), (writeErr) => {
-        if (writeErr) console.error('Could not save playlist:', writeErr);
+        if (writeErr) { console.error('Could not save playlist:', writeErr); }
       });
     });
   }
 
   savePlayerState(state: PlayerState) {
-    if (!this.isElectron) return;
+    if (!this.isElectron) { return; }
     const filePath = this.getStateFilePath();
     this.fs.writeFile(filePath, JSON.stringify(state), (err) => {
-      if (err) console.error('Could not save player state:', err);
+      if (err) { console.error('Could not save player state:', err); }
     });
   }
 
   loadMediaList() {
-    if (!this.isElectron) return;
+    if (!this.isElectron) { return; }
     const filePath = this.getPlaylistFilePath();
 
     this.fs.readFile(filePath, 'utf-8', (err, data) => {
       if (err) {
-        if (err.code !== 'ENOENT') console.error('Could not load playlist:', err);
+        if (err.code !== 'ENOENT') { console.error('Could not load playlist:', err); }
         return;
       }
       try {
@@ -138,12 +138,12 @@ export class ElectronService {
   }
 
   loadPlayerState() {
-    if (!this.isElectron) return;
+    if (!this.isElectron) { return; }
     const filePath = this.getStateFilePath();
 
     this.fs.readFile(filePath, 'utf-8', (err, data) => {
       if (err) {
-        if (err.code !== 'ENOENT') console.error('Could not load player state:', err);
+        if (err.code !== 'ENOENT') { console.error('Could not load player state:', err); }
         return;
       }
       try {
