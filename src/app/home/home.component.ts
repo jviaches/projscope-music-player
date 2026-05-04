@@ -45,6 +45,15 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   constructor(public electronService: ElectronService) {}
 
+  @HostListener('document:keydown.escape')
+  onEscapeKey() {
+    if (this.showUrlOverlay) {
+      this.closeUrlOverlay();
+    } else {
+      this.showVolumeSlider = false;
+    }
+  }
+
   ngOnInit() {
     this.electronService.windowsResize(660);
 
@@ -84,15 +93,6 @@ export class HomeComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
-  }
-
-  @HostListener('document:keydown.escape')
-  onEscapeKey() {
-    if (this.showUrlOverlay) {
-      this.closeUrlOverlay();
-    } else {
-      this.showVolumeSlider = false;
-    }
   }
 
   // ─── Cover art helpers ───────────────────────────────────────
