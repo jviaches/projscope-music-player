@@ -1,102 +1,282 @@
-<!-- <div class="container">
-  <h1 class="title">
-    {{ 'PAGES.HOME.TITLE' | translate }}
-  </h1>
-
-  <a routerLink="/detail">{{ 'PAGES.HOME.GO_TO_DETAIL' | translate }}</a>
-</div> -->
-
-
 <div class="wrapper">
-  <div class="player" style="-webkit-app-region: drag">
-    <div class="cover" [ngStyle]="{animation:isPlaying?'rotation 3s infinite linear':''}"></div>
-    <div class="song-info">
-      <div class="band-wrapper">
-        <span class="band-truncated">{{ displaySongTitle(this.activeSong?.title) }}</span>
-        <span class="band-full">{{ this.activeSong?.title }}</span>
-      </div>
-      <div>
-        <button class="small-control" style="-webkit-app-region: no-drag" (click)="minimizeProgram()">
-          <i class="fa fa-window-minimize"></i>
-        </button>
-        <button class="small-control" style="-webkit-app-region: no-drag" (click)="closeProgram()">
-          <i class="fa fa-window-close"></i>
-        </button>
-      </div>
+  <div class="player-card" style="-webkit-app-region: drag">
+
+    <!-- Window chrome -->
+    <div class="window-chrome" style="-webkit-app-region: no-drag">
+      <button class="icon-btn chrome-btn" (click)="minimizeProgram()" title="Minimize">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" width="14" height="14">
+          <path d="M5 12h14"/>
+        </svg>
+      </button>
+      <button class="icon-btn chrome-btn" (click)="closeProgram()" title="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" width="14" height="14">
+          <path d="M6 6l12 12M18 6L6 18"/>
+        </svg>
+      </button>
     </div>
-    <div class="controls" style="-webkit-app-region: no-drag">
-      <button class="control prev" (click)="playPreviousSong()" [disabled]="this.songs.length === 0">
-        <i control-color [colorChangeDisabled]="isPrevControlDisabled()" class="fa fa-step-backward" ></i>
-      </button>
-      <button class="control play" *ngIf="isPlaying" (click)="player.pause()" [disabled]="this.songs.length === 0">
-        <i  control-color [colorChangeDisabled]="false" class="fa fa-pause" aria-hidden="true"></i>
-      </button>
-      <button class="control play" *ngIf="!isPlaying" (click)="playSong(activeSong)" [disabled]="this.songs.length === 0">
-        <i control-color [colorChangeDisabled]="isPlayControlDisabled()" class="fa fa-play" aria-hidden="true" ></i>
-      </button>
-      <button class="control next" (click)="playNextSong()" [disabled]="this.songs.length === 0">
-        <i control-color [colorChangeDisabled]="isNextControlDisabled()" class="fa fa-step-forward"></i>
-      </button>
-      <ul class="control-options">
-        <li>
-          <button class="small-control" style="-webkit-app-region: no-drag" (click)="togglePlayList()"
-            [ngStyle]="{'color': isPlayListOpened ? 'var(--theme-color)' : ''}">
-            <i class="fa fa-music"></i>
-          </button>
-        </li>
-        <li>
-          <button class="small-control" (click)="toggleShuffleMode()" [disabled]="this.songs.length < 2"
-            [ngStyle]="{'color': isShuffleModeOn ? 'var(--theme-color)' : ''}">
-            <i  control-color [colorChangeDisabled]="isShuffleControlDisabled()" [detectNoColorChange]="isShuffleModeOn" class="fa fa-random"></i>
-          </button>
-        </li>
-        <li>
-          <button class="small-control" (click)="setRepeatMode()" [disabled]="this.songs.length === 0"
-            [ngStyle]="{'color': isRepeatModeOn ? 'var(--theme-color)' : ''}">
-            <i control-color [colorChangeDisabled]="isRepeatControlDisabled()" [detectNoColorChange]="isRepeatModeOn" class="fa fa-undo"></i>
-          </button>
-        </li>
-      </ul>
-    </div>
-    
-    <div class="progress" style="-webkit-app-region: no-drag" (click)="seekToTime($event)">
-      <div class="track-time">
-        <div class="current-time">{{ currentTime$ | async }}</div>
-        <div class="track-length">{{ durationTime }}</div>
+
+    <!-- Hybrid header -->
+    <div class="hybrid-header" style="-webkit-app-region: no-drag">
+
+      <!-- Art stack: vinyl peeks behind tilted cover -->
+      <div class="art-stack">
+        <div class="vinyl-disc" [class.spinning]="isPlaying">
+          <div class="vinyl-groove" *ngFor="let g of vinylGrooves; let i = index"
+            [ngStyle]="{'inset': (38 - i * 4) + '%'}"></div>
+          <div class="vinyl-label">
+            <div class="vinyl-spindle"></div>
+          </div>
+          <div class="vinyl-sheen"></div>
+        </div>
+        <div class="cover-art" [style.background]="getCoverGradient()">
+          <div class="cover-overlay"></div>
+          <div class="cover-monogram">{{ getCoverMonogram() }}</div>
+          <div class="eq-badge" *ngIf="isPlaying && !isLiveStream">
+            <div class="eq-bar"></div>
+            <div class="eq-bar" style="animation-delay: 0.15s"></div>
+            <div class="eq-bar" style="animation-delay: 0.3s"></div>
+          </div>
+          <div class="live-badge-cover" *ngIf="isLiveStream && isPlaying">LIVE</div>
+        </div>
       </div>
-      <div #progressArea class="progress-area">
-        <div #progressBar class="progress-bar" role="progressbar"
-          [ngStyle]="{'width': (currentProgress$ | async) + '%'}" [attr.aria-valuenow]="(currentProgress$ | async) "
-          aria-valuemin="0" aria-valuemax="100">
+
+      <!-- Track meta + transport -->
+      <div class="track-meta">
+        <div class="now-playing-label">Now Playing</div>
+        <div class="track-title-display">{{ activeSong?.title || 'No track selected' }}</div>
+
+        <div class="transport">
+          <button class="icon-btn" (click)="playPreviousSong()"
+            [disabled]="isPrevControlDisabled()" title="Previous">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+              <path d="M7 6h2v12H7zM10 12l9-6v12z"/>
+            </svg>
+          </button>
+
+          <button class="play-btn" (click)="togglePlayPause()" [disabled]="songs.length === 0">
+            <svg *ngIf="isPlaying" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+              <path d="M6 5h4v14H6zM14 5h4v14h-4z"/>
+            </svg>
+            <svg *ngIf="!isPlaying" viewBox="0 0 24 24" fill="currentColor" width="18" height="18" style="margin-left: 2px">
+              <path d="M7 5l13 7-13 7z"/>
+            </svg>
+          </button>
+
+          <button class="icon-btn" (click)="playNextSong()"
+            [disabled]="isNextControlDisabled()" title="Next">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+              <path d="M15 6h2v12h-2zM5 6l9 6-9 6z"/>
+            </svg>
+          </button>
+
+          <div class="transport-spacer"></div>
+
+          <button class="icon-btn" [class.active]="isShuffleModeOn"
+            (click)="toggleShuffleMode()" [disabled]="songs.length < 2" title="Shuffle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+              stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+              <path d="M16 4h4v4"/><path d="M4 20l16-16"/>
+              <path d="M16 20h4v-4"/><path d="M4 4l5 5"/><path d="M15 15l5 5"/>
+            </svg>
+          </button>
+
+          <button class="icon-btn" [class.active]="isRepeatModeOn"
+            (click)="setRepeatMode()" [disabled]="songs.length === 0" title="Repeat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+              stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+              <path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+              <path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+            </svg>
+          </button>
+
+          <!-- Volume control -->
+          <div class="volume-control">
+            <div class="volume-backdrop" *ngIf="showVolumeSlider"
+              (click)="showVolumeSlider = false"></div>
+            <div class="volume-popover" *ngIf="showVolumeSlider">
+              <input type="range" class="volume-slider" min="0" max="1" step="0.01"
+                [value]="isMuted ? 0 : volume" (input)="setVolume($event)"/>
+              <button class="icon-btn mute-btn" (click)="toggleMute()" [class.active]="isMuted">
+                <svg *ngIf="!isMuted" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
+                  <path d="M11 5L6 9H3v6h3l5 4z"/>
+                  <path d="M15 9a4 4 0 0 1 0 6"/>
+                </svg>
+                <svg *ngIf="isMuted" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
+                  <path d="M11 5L6 9H3v6h3l5 4z"/>
+                  <path d="M22 9l-6 6"/><path d="M16 9l6 6"/>
+                </svg>
+              </button>
+            </div>
+            <button class="icon-btn" [class.active]="isMuted"
+              (click)="$event.stopPropagation(); showVolumeSlider = !showVolumeSlider" title="Volume">
+              <svg *ngIf="!isMuted" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                <path d="M11 5L6 9H3v6h3l5 4z"/>
+                <path d="M15 9a4 4 0 0 1 0 6"/>
+                <path d="M18 6a8 8 0 0 1 0 12"/>
+              </svg>
+              <svg *ngIf="isMuted" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                <path d="M11 5L6 9H3v6h3l5 4z"/>
+                <path d="M22 9l-6 6"/><path d="M16 9l6 6"/>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
-    <div *ngIf="isPlayListOpened === true" class="playlist">
-      <ul class="playListItems">
-        <li *ngFor="let song of songs; let i = index">
-          <div class="plItem" [ngStyle]="{'color': song?.path === activeSong?.path ? 'var(--theme-color)' : ''}">
-            <div>
-              <span class="plNum">{{i+1 | number : '2.0-0'}}</span>
-              <span class="plTitle" (click)="playSongFromPlaylist(song.path)">{{displaySongTitle(song.title)}}</span>
-            </div>
-            <!-- <span class="plLength">2:46</span> -->
-            <span class="plRemove" (click)="deleteSongFromPlaylist(song.path)">
-              <i class="fa fa-trash"></i>
-            </span>
-          </div>
-        </li>
-      </ul>
-      <div class="playlist-footer">
-        <button class="add-media-control" (click)="addMediaFiles()">
-          Add Media
-        </button>
-        <button class="add-media-control" (click)="addMediaFolder()">
-          Add Folder
-        </button>
+    <!-- Progress bar -->
+    <div class="progress-wrap" style="-webkit-app-region: no-drag">
+      <div class="progress-track" #progressArea (click)="seekToTime($event)">
+        <div class="progress-bg"></div>
+        <div class="progress-fill" [style.width.%]="currentProgress$ | async"
+          [style.opacity]="isLiveStream ? 0 : 1"></div>
+        <div class="progress-thumb" [style.left.%]="currentProgress$ | async"
+          [style.opacity]="isLiveStream ? 0 : 1"></div>
+      </div>
+      <div class="progress-times">
+        <span>{{ currentTime$ | async }}</span>
+        <span class="live-badge" *ngIf="isLiveStream">LIVE</span>
+        <span *ngIf="!isLiveStream">{{ durationTime || '0:00' }}</span>
       </div>
     </div>
+
+    <div class="section-divider"></div>
+
+    <!-- Track list -->
+    <div class="track-list" style="-webkit-app-region: no-drag">
+      <div class="track-row" *ngFor="let song of songs; let i = index"
+        [class.current]="song.path === activeSong?.path"
+        (dragover)="onDragOver($event)"
+        (drop)="onDrop($event, i)"
+        (click)="playSongFromPlaylist(song.path)">
+
+        <div class="track-index">
+          <div class="track-num" [class.current]="song.path === activeSong?.path">
+            {{ i + 1 | number:'2.0-0' }}
+          </div>
+          <div class="drag-handle"
+            draggable="true"
+            (dragstart)="onDragStart($event, i)"
+            (click)="$event.stopPropagation()">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+              <circle cx="9"  cy="6"  r="1.4"/><circle cx="15" cy="6"  r="1.4"/>
+              <circle cx="9"  cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/>
+              <circle cx="9"  cy="18" r="1.4"/><circle cx="15" cy="18" r="1.4"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="track-info">
+          <div class="eq-mini" *ngIf="song.path === activeSong?.path && isPlaying">
+            <div class="eq-bar-small"></div>
+            <div class="eq-bar-small" style="animation-delay: 0.15s"></div>
+            <div class="eq-bar-small" style="animation-delay: 0.3s"></div>
+          </div>
+          <svg *ngIf="song.type === 'stream' && !(song.path === activeSong?.path && isPlaying)"
+            class="stream-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="12" height="12">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M2 12h20"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          </svg>
+          <span class="track-name">{{ displaySongTitle(song.title) }}</span>
+        </div>
+
+        <button class="trash-btn"
+          (click)="$event.stopPropagation(); deleteSongFromPlaylist(song.path)" title="Remove">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+            stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+            <path d="M3 6h18"/>
+            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          </svg>
+        </button>
+      </div>
+      <div class="empty-msg" *ngIf="songs.length === 0">Your library is empty.</div>
+    </div>
+
+    <!-- URL Overlay -->
+    <ng-container *ngIf="showUrlOverlay">
+      <div class="url-overlay-backdrop" (click)="closeUrlOverlay()"></div>
+      <div class="url-overlay-panel" (click)="$event.stopPropagation()">
+
+        <!-- URL input form -->
+        <ng-container *ngIf="!showRssChooser">
+          <div class="url-overlay-title">Add Stream or Podcast</div>
+          <p class="url-overlay-hint">Enter a stream URL, direct audio link, or RSS/podcast feed.</p>
+          <input class="url-input" type="url" placeholder="https://..."
+            [(ngModel)]="urlInput"
+            (keydown.enter)="submitUrl()"
+            autofocus />
+          <span class="url-error" *ngIf="urlInputError">{{ urlInputError }}</span>
+          <div class="url-overlay-actions">
+            <button class="url-cancel-btn" (click)="closeUrlOverlay()">Cancel</button>
+            <button class="url-submit-btn" (click)="submitUrl()" [disabled]="urlIsValidating">
+              {{ urlIsValidating ? 'Loading…' : 'Add' }}
+            </button>
+          </div>
+        </ng-container>
+
+        <!-- RSS episode chooser -->
+        <ng-container *ngIf="showRssChooser">
+          <div class="url-overlay-title">{{ rssFeedTitle }}</div>
+          <p class="url-overlay-hint">{{ rssEpisodes.length }} episode{{ rssEpisodes.length === 1 ? '' : 's' }} found. Click to add individually.</p>
+          <div class="rss-episode-list">
+            <div class="rss-episode-row" *ngFor="let ep of rssEpisodes"
+              (click)="addRssEpisode(ep)"
+              [class.already-added]="isSongInPlaylist(ep.url)">
+              <span class="rss-episode-title">{{ ep.title }}</span>
+              <svg class="rss-add-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" width="14" height="14">
+                <path d="M12 5v14M5 12h14"/>
+              </svg>
+            </div>
+          </div>
+          <div class="url-overlay-actions">
+            <button class="url-cancel-btn" (click)="closeUrlOverlay()">Cancel</button>
+            <button class="url-submit-btn" (click)="addAllRssEpisodes()">Add All</button>
+          </div>
+        </ng-container>
+
+      </div>
+    </ng-container>
+
+    <!-- Footer -->
+    <div class="player-footer" style="-webkit-app-region: no-drag">
+      <button class="footer-btn" (click)="addMediaFiles()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+          stroke-linecap="round" width="14" height="14">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        Add Media
+      </button>
+      <button class="footer-btn" (click)="addMediaFolder()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+          stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+          <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        </svg>
+        Add Folder
+      </button>
+      <button class="footer-btn" (click)="addStreamUrl()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+          stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+        Add Stream
+      </button>
+    </div>
+
   </div>
 </div>
 
-<audio #player preload="none" (timeupdate)="onTimeUpdate()" (pause)="onPause()" (ended)="onEnded()"></audio>
+<audio #player preload="none"
+  (loadedmetadata)="onLoadedMetadata()"
+  (timeupdate)="onTimeUpdate()"
+  (pause)="onPause()"
+  (ended)="onEnded()">
+</audio>

@@ -1,23 +1,57 @@
-@import 'font-awesome/css/font-awesome.css';
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600;700&display=swap');
 
 body {
-  font-family: "Cabin", Helvetica, Arial;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   margin: 0;
   background-color: transparent;
 }
 
-::-webkit-scrollbar {
-  display: none;
+* {
+  box-sizing: border-box;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: -moz-none;
+  -o-user-select: none;
+  user-select: none;
 }
 
 *:focus {
   outline: none;
 }
 
-* {
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: -moz-none;
-  -o-user-select: none;
-  user-select: none;
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Custom scrollbar for track list */
+.track-list::-webkit-scrollbar {
+  display: block;
+  width: 6px;
+}
+
+.track-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.track-list::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+/* Global keyframe animations */
+@keyframes vinyl-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes eq-bar {
+  0%, 100% { height: 4px; }
+  50%      { height: 12px; }
+}
+
+@keyframes float-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }

@@ -1,7 +1,10 @@
 :host {
-    --background-color: #fff;
-    --theme-color: #f86d92;
-    --theme-color-secondary: #ffe8ee;
-    --control-active-color: darkgray;
-    --control-non-active-color: #d6dee7;
+  --background-color: #ffffff;
+  --theme-color: #FF6B6B;
+  --theme-color-secondary: rgba(255, 107, 107, 0.15);
+  --control-active-color: #9a9a9a;
+  --control-non-active-color: #d6dee7;
+  --subtle-color: #7a7a7a;
+  --text-color: #1a1a1a;
+  --border-color: rgba(0, 0, 0, 0.06);
 }

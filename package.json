@@ -59,11 +59,7 @@
     "lint": "ng lint"
   },
   "dependencies": {
-    "@electron/remote": "2.0.8",
-    "angular-font-awesome": "3.1.2",
-    "appdata-path": "1.0.0",
-    "electron-updater": "4.6.5",
-    "font-awesome": "4.7.0"
+    "@electron/remote": "2.0.8"
   },
   "devDependencies": {
     "@angular-builders/custom-webpack": "13.1.0",

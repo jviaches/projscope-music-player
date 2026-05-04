@@ -1,14 +1,28 @@
 import { Injectable, NgZone } from '@angular/core';
 
-// If you import a module but never use any of the imported values other than as TypeScript types,
-// the resulting javascript file will look as if you never imported the module at all.
 import { ipcRenderer, webFrame } from 'electron';
 import * as childProcess from 'child_process';
 import * as fs from 'fs';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { Subject } from 'rxjs';
 import { Song } from '../../../models/song.model';
 import * as path from 'path';
-import getAppDataPath from 'appdata-path';
+
+export interface PlayerState {
+  volume: number;
+  isShuffleModeOn: boolean;
+  isRepeatModeOn: boolean;
+}
+
+export interface RssEpisode {
+  title: string;
+  url: string;
+}
+
+export interface RssFeedResult {
+  feedTitle: string;
+  episodes: RssEpisode[];
+  error?: string;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -19,41 +33,36 @@ export class ElectronService {
   childProcess: typeof childProcess;
   fs: typeof fs;
 
-  mediaSources = new BehaviorSubject(null);
-  saveStatusChange = new BehaviorSubject(false);
+  // Subject (not BehaviorSubject) — no null replay to new subscribers
+  mediaSources = new Subject<Song | string>();
+  saveStatusChange = new Subject<boolean>();
+  playerState = new Subject<PlayerState>();
+  rssFeedResult = new Subject<RssFeedResult>();
 
   playListFileName = 'playlist.cfg';
+  playerStateFileName = 'player-state.cfg';
 
   constructor(private ngZone: NgZone) {
-    // Conditional imports
     if (this.isElectron) {
       this.ipcRenderer = window.require('electron').ipcRenderer;
       this.webFrame = window.require('electron').webFrame;
-
       this.childProcess = window.require('child_process');
       this.fs = window.require('fs');
 
       this.loadMediaList();
+      this.loadPlayerState();
 
-      // Notes :
-      // * A NodeJS's dependency imported with 'window.require' MUST BE present in `dependencies` of both `app/package.json`
-      // and `package.json (root folder)` in order to make it work here in Electron's Renderer process (src folder)
-      // because it will loaded at runtime by Electron.
-      // * A NodeJS's dependency imported with TS module import (ex: import { Dropbox } from 'dropbox') CAN only be present
-      // in `dependencies` of `package.json (root folder)` because it is loaded during build phase and does not need to be
-      // in the final bundle. Reminder : only if not used in Electron's Main process (app folder)
-
-      // If you want to use a NodeJS 3rd party deps in Renderer process,
-      // ipcRenderer.invoke can serve many common use cases.
-      // https://www.electronjs.org/docs/latest/api/ipc-renderer#ipcrendererinvokechannel-args
-
-      this.ipcRenderer.on('add-media', (event, arg) => {
+      this.ipcRenderer.on('add-media', (event, arg: string[]) => {
         this.ngZone.run(() => {
-          arg.forEach(element => {
-            this.mediaSources.next(element);
+          arg.forEach(filePath => {
+            this.mediaSources.next(filePath);
             this.saveStatusChange.next(true);
           });
         });
+      });
+
+      this.ipcRenderer.on('rss-feed-result', (_event, result: RssFeedResult) => {
+        this.ngZone.run(() => this.rssFeedResult.next(result));
       });
     }
   }
@@ -63,21 +72,15 @@ export class ElectronService {
   }
 
   closeProgram() {
-    if (this.isElectron) {
-      this.ipcRenderer.send('close-app', true);
-    }
+    if (this.isElectron) this.ipcRenderer.send('close-app', true);
   }
 
   minimizeProgram() {
-    if (this.isElectron) {
-      this.ipcRenderer.send('minimize-app', true);
-    }
+    if (this.isElectron) this.ipcRenderer.send('minimize-app', true);
   }
 
-  windowsResize(heigh: number) {
-    if (this.isElectron) {
-      this.ipcRenderer.send('resize-app', heigh);
-    }
+  windowsResize(height: number) {
+    if (this.isElectron) this.ipcRenderer.send('resize-app', height);
   }
 
   openFileDialog(): void {
@@ -88,52 +91,85 @@ export class ElectronService {
     this.ipcRenderer.send('open-folder-dialog');
   }
 
-  saveMediaList(content: any) {
-    let playListPath = getAppDataPath('projscope-player');
+  fetchRssFeed(feedUrl: string): void {
+    if (this.isElectron) this.ipcRenderer.send('fetch-rss-feed', feedUrl);
+  }
 
-    this.fs.mkdir(playListPath, () => {
+  saveMediaList(content: Song[]) {
+    if (!this.isElectron) return;
+    const filePath = this.getPlaylistFilePath();
+    const dir = path.dirname(filePath);
 
-      // some kind of bug in getAppDataPath library
-      // temporary fix for local run
-      if (playListPath.includes('.config')) {
-        playListPath = '';
+    this.fs.mkdir(dir, { recursive: true }, (mkdirErr) => {
+      if (mkdirErr && mkdirErr.code !== 'EEXIST') {
+        console.error('Could not create playlist directory:', mkdirErr);
+        return;
       }
-
-      this.fs.writeFile(path.join(playListPath, this.playListFileName), JSON.stringify(content), (err) => {
-        if (err) {
-          alert('An error ocurred updating settings file' + err.message);
-          console.log(err);
-          return;
-        } else {
-          console.log('File saved succesfully!');
-        }
+      this.fs.writeFile(filePath, JSON.stringify(content), (writeErr) => {
+        if (writeErr) console.error('Could not save playlist:', writeErr);
       });
+    });
+  }
+
+  savePlayerState(state: PlayerState) {
+    if (!this.isElectron) return;
+    const filePath = this.getStateFilePath();
+    this.fs.writeFile(filePath, JSON.stringify(state), (err) => {
+      if (err) console.error('Could not save player state:', err);
     });
   }
 
   loadMediaList() {
-    let playListPath = getAppDataPath('projscope-player');
+    if (!this.isElectron) return;
+    const filePath = this.getPlaylistFilePath();
 
-    this.fs.mkdir(playListPath, () => {
-
-      // some kind of bug in getAppDataPath library
-      // temporary fix for local run
-      if (playListPath.includes('.config')) {
-        playListPath = '';
+    this.fs.readFile(filePath, 'utf-8', (err, data) => {
+      if (err) {
+        if (err.code !== 'ENOENT') console.error('Could not load playlist:', err);
+        return;
       }
-      this.fs.readFile(path.join(playListPath, this.playListFileName), 'utf-8', (err, data) => {
-        try {
-          this.triggerMediaSourceChanges(JSON.parse(data));
-        } catch (error) {
-          console.log('Unable to load.. ' + error);
-        }
-      });
+      try {
+        const songs: Song[] = JSON.parse(data);
+        this.ngZone.run(() => songs.forEach(song => this.mediaSources.next(song)));
+      } catch (parseErr) {
+        console.error('Playlist file is corrupt, starting fresh:', parseErr);
+      }
     });
   }
 
-  private triggerMediaSourceChanges(data: Song[] | string[]) {
-    data.forEach(mediaItem => {
-      this.mediaSources.next(mediaItem);
+  loadPlayerState() {
+    if (!this.isElectron) return;
+    const filePath = this.getStateFilePath();
+
+    this.fs.readFile(filePath, 'utf-8', (err, data) => {
+      if (err) {
+        if (err.code !== 'ENOENT') console.error('Could not load player state:', err);
+        return;
+      }
+      try {
+        const state: PlayerState = JSON.parse(data);
+        this.ngZone.run(() => this.playerState.next(state));
+      } catch {
+        // corrupt state file — ignore, defaults will be used
+      }
     });
+  }
+
+  private getPlaylistFilePath(): string {
+    try {
+      const { app } = window.require('@electron/remote');
+      return path.join(app.getPath('userData'), this.playListFileName);
+    } catch {
+      return this.playListFileName;
+    }
+  }
+
+  private getStateFilePath(): string {
+    try {
+      const { app } = window.require('@electron/remote');
+      return path.join(app.getPath('userData'), this.playerStateFileName);
+    } catch {
+      return this.playerStateFileName;
+    }
   }
 }

@@ -1,336 +1,484 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
-import { ElectronService } from '../core/services';
+import { take, takeUntil } from 'rxjs/operators';
+import { ElectronService, RssEpisode } from '../core/services';
 import { Song } from '../models/song.model';
-import { log } from 'console';
 
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss']
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent implements OnInit, OnDestroy {
 
-  @ViewChild('player', { static: true }) player: ElementRef;
-  @ViewChild('progressArea', { static: true }) progressArea: ElementRef;
+  @ViewChild('player', { static: true }) player: ElementRef<HTMLAudioElement>;
+  @ViewChild('progressArea', { static: true }) progressArea: ElementRef<HTMLDivElement>;
 
   currentProgress$ = new BehaviorSubject(0);
-  currentTime$ = new Subject();
+  currentTime$ = new Subject<string>();
   songs: Song[] = [];
 
-  audio = new Audio();
   isPlaying = false;
   activeSong: Song;
+  isMuted = false;
+  volume = 0.7;
+  showVolumeSlider = false;
 
   durationTime: string;
 
-  isPlayListOpened = false;
   isShuffleModeOn = false;
   isRepeatModeOn = false;
 
-  constructor(public electronService: ElectronService) {
-  }
+  showUrlOverlay = false;
+  urlInput = '';
+  urlInputError = '';
+  urlIsValidating = false;
+  rssFeedTitle = '';
+  rssEpisodes: RssEpisode[] = [];
+  showRssChooser = false;
+  isLiveStream = false;
+
+  vinylGrooves = [0, 1, 2, 3, 4, 5];
+  dragFromIndex: number | null = null;
+
+  private destroy$ = new Subject<void>();
+
+  constructor(public electronService: ElectronService) {}
 
   ngOnInit() {
-    this.electronService.mediaSources.subscribe(receivedMedia => {
+    this.electronService.windowsResize(660);
 
-      // needed for first time program run (receivedMedia = null)
-      if (!receivedMedia) {
-        return;
-      }
+    this.electronService.playerState.pipe(takeUntil(this.destroy$)).subscribe(state => {
+      this.volume = state.volume ?? 0.7;
+      this.isShuffleModeOn = state.isShuffleModeOn ?? false;
+      this.isRepeatModeOn = state.isRepeatModeOn ?? false;
+      this.player.nativeElement.volume = this.volume;
+    });
 
-      let existingSongIndex = -1;
+    this.electronService.mediaSources.pipe(takeUntil(this.destroy$)).subscribe(receivedMedia => {
+      if (!receivedMedia) return;
 
-      // receivedMedia can be Song (Load flow) or file relative path string (add file to playlist flow)
-      if (receivedMedia?.path) {
-        existingSongIndex = this.songs.findIndex(media => media.path === receivedMedia?.path);
-      } else {
-        existingSongIndex = this.songs.findIndex(media => media.path === receivedMedia);
-      }
+      const existingSongIndex = receivedMedia['path']
+        ? this.songs.findIndex(s => s.path === (receivedMedia as Song).path)
+        : this.songs.findIndex(s => s.path === receivedMedia);
 
       if (existingSongIndex === -1) {
-        // load playlist flow
-        if (receivedMedia?.path) {
-          this.songs.push(receivedMedia);
-        } else { // add file to playlist flow
-          const song = new Song();
-          song.path = receivedMedia;
-          song.title = this.extractFileNameFromPath(receivedMedia);
-
-          this.songs.push(song);
+        if (receivedMedia['path']) {
+          this.songs.push(receivedMedia as Song);
+        } else {
+          this.songs.push({
+            path: receivedMedia as string,
+            title: this.extractFileNameFromPath(receivedMedia as string),
+          });
         }
-
         this.setInitialActiveSong();
       }
     });
 
-    this.electronService.saveStatusChange.subscribe(statusChange => {
-      if (statusChange) {
-        this.electronService.saveMediaList(this.songs);
-      }
+    this.electronService.saveStatusChange.pipe(takeUntil(this.destroy$)).subscribe(statusChange => {
+      if (statusChange) this.electronService.saveMediaList(this.songs);
     });
-
-    this.setInitialActiveSong();
   }
 
-  displaySongTitle(songName: string) {
-    if (songName == null) {
-      return '';
-    }
-
-    const titleLength = 45;
-
-    if (!songName) {
-      return '';
-    }
-
-    return songName.length > titleLength ?
-      songName.substring(0, titleLength) + '...' :
-      songName;
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
-  seekToTime(event) {
-    const offsetWidth = this.progressArea.nativeElement.clientWidth;
-    const percents = this.generatePercentage(event.offsetX, offsetWidth);
+  // ─── Cover art helpers ───────────────────────────────────────
 
-    if (!isNaN(percents)) {
-      const currentSeconds = Math.floor(this.player.nativeElement.currentTime % 60);
-      this.player.nativeElement.currentTime = currentSeconds * percents / 100;
+  getCoverGradient(): string {
+    const hue = this.hashHue(this.activeSong?.title || '');
+    const hue2 = (hue + 50) % 360;
+    return `linear-gradient(135deg, oklch(0.72 0.16 ${hue}) 0%, oklch(0.55 0.18 ${hue2}) 100%)`;
+  }
 
-      this.player.nativeElement.currentTime = percents * this.player.nativeElement.duration / 100;
+  getCoverMonogram(): string {
+    return this.activeSong?.title?.[0]?.toUpperCase() || '♪';
+  }
+
+  displaySongTitle(songName: string): string {
+    if (!songName) return '';
+    return songName.length > 45 ? songName.substring(0, 45) + '...' : songName;
+  }
+
+  // ─── Playback ────────────────────────────────────────────────
+
+  togglePlayPause(): void {
+    if (this.isPlaying) {
+      this.player.nativeElement.pause();
+    } else {
+      this.playSong(this.activeSong);
     }
   }
 
   playSong(song: Song): void {
+    if (!song) return;
 
-    if (this.audio.paused && this.player.nativeElement.currentTime > 0 && this.activeSong.path === song.path) {
-      this.player.nativeElement.play();
+    const el = this.player.nativeElement;
+    if (!this.isPlaying && el.currentTime > 0 && !isNaN(el.duration) && this.activeSong?.path === song.path) {
+      el.play();
       this.isPlaying = true;
       return;
     }
 
     this.resetSong(song);
-
-    this.player.nativeElement.play();
+    el.play();
     this.isPlaying = true;
   }
 
   playSongFromPlaylist(songPath: string): void {
-
-    const songIndex = this.songs.findIndex((song) => song.path === songPath);
-
-    if (songIndex !== -1) {
-      this.playSong(this.songs[songIndex]);
-    }
+    const song = this.songs.find(s => s.path === songPath);
+    if (song) this.playSong(song);
   }
 
   deleteSongFromPlaylist(songPath: string): void {
-    const songIndex = this.songs.findIndex((song) => song.path === songPath);
+    const songIndex = this.songs.findIndex(s => s.path === songPath);
+    if (songIndex === -1) return;
 
-    if (songIndex === -1) {
-      return;
-    }
-
+    const wasActive = this.activeSong?.path === songPath;
     this.songs.splice(songIndex, 1);
+    this.electronService.saveMediaList(this.songs);
 
-    // if deleted song is an active one
-    if (this.activeSong.path === songPath) {
-      this.resetSong(this.songs[0]);
-
-      if (this.songs.length !== 0) {
+    if (wasActive) {
+      if (this.songs.length > 0) {
+        const nextIdx = Math.min(songIndex, this.songs.length - 1);
+        this.resetSong(this.songs[nextIdx]);
         this.setSongDuration();
+      } else {
+        this.activeSong = null;
+        this.durationTime = undefined;
+        this.currentProgress$.next(0);
       }
     }
-
-    this.electronService.saveMediaList(this.songs);
   }
 
   onTimeUpdate() {
-    if (!this.durationTime) {
-      this.setSongDuration();
-    }
+    const el = this.player.nativeElement;
+    if (!this.durationTime) this.setSongDuration();
 
-    const currentMinutes = this.generateMinutes(this.player.nativeElement.currentTime);
-    const currentSeconds = this.generateSeconds(this.player.nativeElement.currentTime);
-    this.currentTime$.next(this.generateTimeToDisplay(currentMinutes, currentSeconds));
+    const mins = this.generateMinutes(el.currentTime);
+    const secs = this.generateSeconds(el.currentTime);
+    this.currentTime$.next(this.generateTimeToDisplay(mins, secs));
 
-    const percents = this.generatePercentage(this.player.nativeElement.currentTime, this.player.nativeElement.duration);
-
-    if (!isNaN(percents)) {
-      this.currentProgress$.next(percents);
-    }
+    const pct = this.generatePercentage(el.currentTime, el.duration);
+    if (!isNaN(pct) && isFinite(pct)) this.currentProgress$.next(pct);
   }
 
-  onEnded() {
+  onLoadedMetadata(): void {
+    this.setSongDuration();
+  }
+
+  onPause(): void {
+    this.isPlaying = false;
+  }
+
+  onEnded(): void {
     if (this.isShuffleModeOn) {
       this.playRandomSong();
+    } else if (this.isRepeatModeOn) {
+      // repeat-all: wrap around to first track when last track ends
+      this.playSong(this.songs[0]);
     } else {
       this.playNextSong();
     }
   }
 
   playNextSong(): void {
-    if (this.songs.length < 2) {
-      return;
-    }
+    if (this.songs.length < 2) return;
+    const idx = this.songs.findIndex(s => s.path === this.activeSong?.path);
+    if (idx === -1) return;
 
-    const songIndex = this.songs.findIndex((song) => song.path === this.activeSong?.path);
-    if (songIndex === -1) {
-      return;
-    }
-    const nextSongIndex = songIndex + 1;
-
-    if (this.isShuffleModeOn) {
-      this.playRandomSong();
-      return;
-    }
-
-    if (nextSongIndex === this.songs.length && this.isRepeatModeOn) {
-      this.playSong(this.songs[0]);
-    } else {
-      if (nextSongIndex < this.songs.length) {
-        this.playSong(this.songs[songIndex + 1]);
-      }
+    const nextIdx = idx + 1;
+    if (nextIdx < this.songs.length) {
+      this.playSong(this.songs[nextIdx]);
     }
   }
 
   playPreviousSong(): void {
-    if (this.songs.length < 2) {
-      return;
-    }
+    if (this.songs.length < 2) return;
+    const idx = this.songs.findIndex(s => s.path === this.activeSong?.path);
+    if (idx === -1 || idx === 0) return;
+    this.playSong(this.songs[idx - 1]);
+  }
 
-    const songIndex = this.songs.findIndex((song) => song.path === this.activeSong?.path);
-    if (songIndex === -1) {
-      return;
-    }
-
-    const prevSongIndex = songIndex - 1;
-
-    if (prevSongIndex >= 0) {
-      this.playSong(this.songs[prevSongIndex]);
+  seekToTime(event: MouseEvent) {
+    if (this.isLiveStream) return;
+    const offsetWidth = this.progressArea.nativeElement.clientWidth;
+    const el = this.player.nativeElement;
+    if (!isNaN(el.duration) && offsetWidth > 0) {
+      const pct = Math.max(0, Math.min(1, event.offsetX / offsetWidth));
+      el.currentTime = pct * el.duration;
     }
   }
 
-  onPause(): void {
-    this.isPlaying = false;
-    this.audio.pause();
-  }
-
-  togglePlayList() {
-    this.isPlayListOpened = !this.isPlayListOpened;
-
-    if (this.isPlayListOpened) {
-      this.electronService.windowsResize(600);
-    } else {
-      this.electronService.windowsResize(170);
-    }
-  }
+  // ─── Controls ────────────────────────────────────────────────
 
   toggleShuffleMode() {
     this.isShuffleModeOn = !this.isShuffleModeOn;
-  }
-
-  playRandomSong() {
-    let randomSong = Math.floor(Math.random() * this.songs.length);
-
-    while (this.activeSong.path === this.songs[randomSong].path) {
-      randomSong = Math.floor(Math.random() * this.songs.length);
-    }
-
-    this.playSong(this.songs[randomSong]);
-  }
-
-  addMediaFiles() {
-    this.electronService.openFileDialog();
-  }
-
-  addMediaFolder() {
-    this.electronService.openFolderDialog();
+    this.persistPlayerState();
   }
 
   setRepeatMode() {
     this.isRepeatModeOn = !this.isRepeatModeOn;
+    this.persistPlayerState();
   }
 
-  closeProgram() {
-    this.electronService.closeProgram();
+  toggleMute() {
+    this.isMuted = !this.isMuted;
+    this.player.nativeElement.muted = this.isMuted;
   }
 
-  minimizeProgram() {
-    this.electronService.minimizeProgram();
+  setVolume(event: Event) {
+    this.volume = +(event.target as HTMLInputElement).value;
+    this.player.nativeElement.volume = this.volume;
+    if (this.volume > 0 && this.isMuted) {
+      this.isMuted = false;
+      this.player.nativeElement.muted = false;
+    }
+    this.persistPlayerState();
   }
 
-  isPrevControlDisabled() {
-    return this.songs && this.songs[0] === this.activeSong;
+  // ─── Drag reorder ────────────────────────────────────────────
+
+  onDragStart(event: DragEvent, index: number) {
+    this.dragFromIndex = index;
+    event.dataTransfer.effectAllowed = 'move';
   }
 
-  isNextControlDisabled() {
-    return this.songs && this.songs[this.songs.length - 1] === this.activeSong && !this.isShuffleModeOn;
+  onDragOver(event: DragEvent) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
   }
 
-  isPlayControlDisabled() {
-    return !(this.songs && this.songs.length > 0);
+  onDrop(event: DragEvent, toIndex: number) {
+    event.preventDefault();
+    if (this.dragFromIndex == null || this.dragFromIndex === toIndex) {
+      this.dragFromIndex = null;
+      return;
+    }
+    this.reorderTrack(this.dragFromIndex, toIndex);
+    this.dragFromIndex = null;
+    this.electronService.saveMediaList(this.songs);
   }
 
-  isRepeatControlDisabled() {
-    return !(this.songs && this.songs.length > 0);
+  reorderTrack(from: number, to: number) {
+    const copy = this.songs.slice();
+    const [moved] = copy.splice(from, 1);
+    copy.splice(to, 0, moved);
+    this.songs = copy;
   }
 
-  isShuffleControlDisabled() {
-    return !(this.songs && this.songs.length > 1);
+  // ─── Disabled state helpers ──────────────────────────────────
+
+  isPrevControlDisabled(): boolean {
+    return this.songs.length === 0 || this.songs[0] === this.activeSong;
+  }
+
+  isNextControlDisabled(): boolean {
+    return this.songs.length === 0 ||
+      (this.songs[this.songs.length - 1] === this.activeSong && !this.isShuffleModeOn && !this.isRepeatModeOn);
+  }
+
+  // ─── Electron ────────────────────────────────────────────────
+
+  addMediaFiles() { this.electronService.openFileDialog(); }
+  addMediaFolder() { this.electronService.openFolderDialog(); }
+  addStreamUrl() { this.openUrlOverlay(); }
+  closeProgram() { this.electronService.closeProgram(); }
+  minimizeProgram() { this.electronService.minimizeProgram(); }
+
+  // ─── URL / Stream overlay ────────────────────────────────────
+
+  openUrlOverlay() {
+    this.urlInput = '';
+    this.urlInputError = '';
+    this.urlIsValidating = false;
+    this.rssFeedTitle = '';
+    this.rssEpisodes = [];
+    this.showRssChooser = false;
+    this.showUrlOverlay = true;
+  }
+
+  closeUrlOverlay() {
+    this.showUrlOverlay = false;
+    this.showRssChooser = false;
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapeKey() {
+    if (this.showUrlOverlay) {
+      this.closeUrlOverlay();
+    } else {
+      this.showVolumeSlider = false;
+    }
+  }
+
+  submitUrl() {
+    const url = this.urlInput.trim();
+    if (!this.isValidHttpUrl(url)) {
+      this.urlInputError = 'Please enter a valid http:// or https:// URL.';
+      return;
+    }
+    this.urlInputError = '';
+    if (this.looksLikeRssFeed(url)) {
+      this.handleRssFeedUrl(url);
+    } else {
+      this.handleDirectStreamUrl(url);
+    }
+  }
+
+  handleDirectStreamUrl(url: string) {
+    if (this.songs.some(s => s.path === url)) {
+      this.urlInputError = 'This URL is already in your playlist.';
+      return;
+    }
+    const song: Song = { title: this.deriveTitleFromUrl(url), path: url, type: 'stream' };
+    this.songs.push(song);
+    this.electronService.saveMediaList(this.songs);
+    this.setInitialActiveSong();
+    this.closeUrlOverlay();
+  }
+
+  handleRssFeedUrl(url: string) {
+    this.urlIsValidating = true;
+    this.electronService.rssFeedResult.pipe(take(1), takeUntil(this.destroy$)).subscribe(result => {
+      this.urlIsValidating = false;
+      if (result.error) {
+        this.urlInputError = `Could not load feed: ${result.error}`;
+        return;
+      }
+      if (result.episodes.length === 0) {
+        this.urlInputError = 'No audio episodes found in this feed.';
+        return;
+      }
+      this.rssFeedTitle = result.feedTitle;
+      this.rssEpisodes = result.episodes;
+      this.showRssChooser = true;
+    });
+    this.electronService.fetchRssFeed(url);
+  }
+
+  addRssEpisode(ep: RssEpisode) {
+    if (this.songs.some(s => s.path === ep.url)) return;
+    const song: Song = { title: ep.title, path: ep.url, type: 'stream' };
+    this.songs.push(song);
+    this.electronService.saveMediaList(this.songs);
+    this.setInitialActiveSong();
+  }
+
+  addAllRssEpisodes() {
+    let added = false;
+    for (const ep of this.rssEpisodes) {
+      if (!this.songs.some(s => s.path === ep.url)) {
+        this.songs.push({ title: ep.title, path: ep.url, type: 'stream' });
+        added = true;
+      }
+    }
+    if (added) {
+      this.electronService.saveMediaList(this.songs);
+      this.setInitialActiveSong();
+    }
+    this.closeUrlOverlay();
+  }
+
+  isSongInPlaylist(url: string): boolean {
+    return this.songs.some(s => s.path === url);
+  }
+
+  private isValidHttpUrl(v: string): boolean {
+    return /^https?:\/\/.{3,}/.test(v);
+  }
+
+  private looksLikeRssFeed(v: string): boolean {
+    return /\.(rss|xml|atom)(\?|$)/i.test(v) || /[/?&]feed([/?&=]|$)/i.test(v);
+  }
+
+  private deriveTitleFromUrl(url: string): string {
+    try {
+      const u = new URL(url);
+      const segments = u.pathname.split('/').filter(Boolean);
+      const last = segments[segments.length - 1] || u.hostname;
+      return decodeURIComponent(last.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '));
+    } catch {
+      return url;
+    }
+  }
+
+  // ─── Private ─────────────────────────────────────────────────
+
+  private hashHue(s: string): number {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
+    return h;
   }
 
   private resetSong(song: Song) {
+    if (!song) return;
+    this.isLiveStream = false;
     this.durationTime = undefined;
-    this.audio.pause();
-
-    this.player.nativeElement.src = song?.path;
+    this.player.nativeElement.src = song.path;
     this.player.nativeElement.load();
     this.activeSong = song;
     this.isPlaying = false;
     this.currentProgress$.next(0);
+    this.currentTime$.next('0:00');
   }
 
   private setSongDuration(): void {
-    const durationInMinutes = this.generateMinutes(this.player.nativeElement.duration);
-    const durationInSeconds = this.generateSeconds(this.player.nativeElement.duration);
-
-    if (!isNaN(this.player.nativeElement.duration)) {
-      this.durationTime = this.generateTimeToDisplay(durationInMinutes, durationInSeconds);
+    const dur = this.player.nativeElement.duration;
+    if (!isFinite(dur)) {
+      this.isLiveStream = true;
+      this.durationTime = undefined;
+      return;
+    }
+    if (!isNaN(dur) && isFinite(dur)) {
+      this.durationTime = this.generateTimeToDisplay(
+        this.generateMinutes(dur),
+        this.generateSeconds(dur)
+      );
     }
   }
 
-  private generateMinutes(currentTime: number): number {
-    return Math.floor(currentTime / 60);
+  private generateMinutes(t: number): number { return Math.floor(t / 60); }
+
+  private generateSeconds(t: number): string {
+    const s = Math.floor(t % 60);
+    return s < 10 ? '0' + s : String(s);
   }
 
-  private generateSeconds(currentTime: number): number | string {
-    const secsFormula = Math.floor(currentTime % 60);
-    return secsFormula < 10 ? '0' + String(secsFormula) : secsFormula;
+  private generateTimeToDisplay(m: number, s: string): string {
+    return `${m}:${s}`;
   }
 
-  private generateTimeToDisplay(currentMinutes, currentSeconds): string {
-    return `${currentMinutes}:${currentSeconds}`;
+  private generatePercentage(current: number, total: number): number {
+    return Math.round((current / total) * 100);
   }
 
-  private generatePercentage(currentTime: number, duration: number): number {
-    return Math.round((currentTime / duration) * 100);
+  private extractFileNameFromPath(filePath: string): string {
+    return filePath?.length ? filePath.split('\\').pop().split('/').pop() : '';
   }
 
-  private extractFileNameFromPath(path: string) {
-    if (path && path.length > 0) {
-      return path.split('\\').pop().split('/').pop();
+  private playRandomSong() {
+    if (this.songs.length <= 1) return;
+    let idx = Math.floor(Math.random() * this.songs.length);
+    while (this.songs[idx]?.path === this.activeSong?.path) {
+      idx = Math.floor(Math.random() * this.songs.length);
     }
-
-    return '';
+    this.playSong(this.songs[idx]);
   }
 
   private setInitialActiveSong() {
     if (this.songs.length > 0 && !this.activeSong) {
-      this.player.nativeElement.src = this.songs[0];
-      this.player.nativeElement.load();
-      this.activeSong = this.songs[0];
-      this.isPlaying = false;
+      this.resetSong(this.songs[0]);
     }
+  }
+
+  private persistPlayerState() {
+    this.electronService.savePlayerState({
+      volume: this.volume,
+      isShuffleModeOn: this.isShuffleModeOn,
+      isRepeatModeOn: this.isRepeatModeOn,
+    });
   }
 }
