@@ -29,10 +29,13 @@ jobs:
       - name: Build Angular app
         run: npm run build:prod
 
-      - name: Package & publish Windows
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder build --win --publish always
+      - name: Package Windows
+        run: npx electron-builder build --win --publish never
+
+      - name: Upload Windows artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*.exe
 
   release-linux:
     runs-on: ubuntu-latest
@@ -61,7 +64,13 @@ jobs:
       - name: Build Angular app
         run: npm run build:prod
 
-      - name: Package & publish Linux
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder build --linux --publish always
+      - name: Package Linux
+        run: npx electron-builder build --linux --publish never
+
+      - name: Upload Linux artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/*.AppImage
+            release/*.deb
+            release/*.rpm
