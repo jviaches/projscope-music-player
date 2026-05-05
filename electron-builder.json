@@ -26,8 +26,15 @@
   "win": {
     "icon": "dist/assets/icons",
     "target": [
+      "nsis",
       "portable"
     ]
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true
   },
   "portable": {
     "splashImage": "dist/assets/icons/electron.bmp"
