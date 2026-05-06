@@ -214,6 +214,10 @@ ipcMain.on('validate-stream-url', (event, streamUrl: string) => {
 // ─── App lifecycle ────────────────────────────────────────────────────────────
 
 try {
+  app.commandLine.appendSwitch('disable-gpu');
+  app.commandLine.appendSwitch('disable-software-rasterizer');
+  remoteMain.initialize();
+
   app.on('ready', () => setTimeout(createWindow, 400));
 
   app.on('window-all-closed', () => {

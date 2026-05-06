@@ -28,6 +28,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   isShuffleModeOn = false;
   isRepeatModeOn = false;
+  isPlaylistVisible = true;
 
   showUrlOverlay = false;
   urlInput = '';
@@ -291,6 +292,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   // ─── Electron ────────────────────────────────────────────────
 
+  togglePlaylist() { this.isPlaylistVisible = !this.isPlaylistVisible; }
   addMediaFiles() { this.electronService.openFileDialog(); }
   addMediaFolder() { this.electronService.openFolderDialog(); }
   addStreamUrl() { this.openUrlOverlay(); }
