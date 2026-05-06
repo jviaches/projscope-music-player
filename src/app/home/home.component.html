@@ -2,15 +2,21 @@
   <div class="player-card" style="-webkit-app-region: drag">
 
     <!-- Window chrome -->
-    <div class="window-chrome" style="-webkit-app-region: no-drag">
-      <button class="icon-btn chrome-btn" (click)="minimizeProgram()" title="Minimize">
+    <div class="window-chrome" style="-webkit-app-region: drag">
+      <button class="icon-btn chrome-btn" style="-webkit-app-region: no-drag" (click)="minimizeProgram()" title="Minimize">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" width="14" height="14">
           <path d="M5 12h14"/>
         </svg>
       </button>
-      <button class="icon-btn chrome-btn" (click)="closeProgram()" title="Close">
+      <button class="icon-btn chrome-btn" style="-webkit-app-region: no-drag" (click)="closeProgram()" title="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" width="14" height="14">
           <path d="M6 6l12 12M18 6L6 18"/>
+        </svg>
+      </button>
+      <button class="icon-btn chrome-btn playlist-toggle" style="-webkit-app-region: no-drag"
+        (click)="togglePlaylist()" [class.active]="isPlaylistVisible" title="Toggle playlist">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+          <path d="M3 6h18M3 12h18M3 18h12"/>
         </svg>
       </button>
     </div>
@@ -41,7 +47,7 @@
 
       <!-- Track meta + transport -->
       <div class="track-meta">
-        <div class="now-playing-label">Now Playing</div>
+        <div class="now-playing-label">{{ activeSong ? 'Now Playing' : 'No song selected' }}</div>
         <div class="track-title-display">{{ activeSong?.title || 'No track selected' }}</div>
 
         <div class="transport">
@@ -143,7 +149,7 @@
     <div class="section-divider"></div>
 
     <!-- Track list -->
-    <div class="track-list" style="-webkit-app-region: no-drag">
+    <div class="track-list" style="-webkit-app-region: no-drag" *ngIf="isPlaylistVisible">
       <div class="track-row" *ngFor="let song of songs; let i = index"
         [class.current]="song.path === activeSong?.path"
         (dragover)="onDragOver($event)"
@@ -189,7 +195,7 @@
     </div>
 
     <!-- Footer -->
-    <div class="player-footer" style="-webkit-app-region: no-drag">
+    <div class="player-footer" style="-webkit-app-region: no-drag" *ngIf="isPlaylistVisible">
       <button class="footer-btn" (click)="addMediaFiles()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
           stroke-linecap="round" width="14" height="14">

@@ -120,6 +120,10 @@ ipcMain.on('minimize-app', () => win.minimize());
 ipcMain.on('close-app', () => app.exit(0));
 
 try {
+  app.commandLine.appendSwitch('disable-gpu');
+  app.commandLine.appendSwitch('disable-software-rasterizer');
+  remoteMain.initialize();
+
   // This method will be called when Electron has finished
   // initialization and is ready to create browser windows.
   // Some APIs can only be used after this event occurs.

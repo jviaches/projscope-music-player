@@ -28,6 +28,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   isShuffleModeOn = false;
   isRepeatModeOn = false;
+  isPlaylistVisible = true;
 
   vinylGrooves = [0, 1, 2, 3, 4, 5];
   dragFromIndex: number | null = null;
@@ -272,6 +273,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   // ─── Electron ────────────────────────────────────────────────
 
+  togglePlaylist() { this.isPlaylistVisible = !this.isPlaylistVisible; }
   addMediaFiles() { this.electronService.openFileDialog(); }
   addMediaFolder() { this.electronService.openFolderDialog(); }
   closeProgram() { this.electronService.closeProgram(); }
