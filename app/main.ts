@@ -46,11 +46,15 @@ function createWindow(): BrowserWindow {
     });
     win.loadURL('http://localhost:4200');
   } else {
-    let appDir = __dirname;
+    let appDir: string;
     if (fs.existsSync(path.join(__dirname, '../dist/index.html'))) {
+      // Running unpacked from project folder (e.g. electron . without serve)
       appDir = path.join(__dirname, '../dist');
+    } else {
+      // Packaged build: extraResources copies dist/ → resources/app/
+      appDir = path.join(process.resourcesPath, 'app');
     }
-    win.loadURL('app://' + path.join(appDir, 'index.html').replace(/\\/g, '/'));
+    win.loadURL('app://' + appDir.replace(/\\/g, '/') + '/index.html');
   }
 
   win.on('closed', () => { win = null; });
