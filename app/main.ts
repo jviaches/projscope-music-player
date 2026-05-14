@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, protocol } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as url from 'url';
@@ -46,15 +46,11 @@ function createWindow(): BrowserWindow {
     });
     win.loadURL('http://localhost:4200');
   } else {
-    let pathIndex = './index.html';
+    let appDir = __dirname;
     if (fs.existsSync(path.join(__dirname, '../dist/index.html'))) {
-      pathIndex = '../dist/index.html';
+      appDir = path.join(__dirname, '../dist');
     }
-    win.loadURL(url.format({
-      pathname: path.join(__dirname, pathIndex),
-      protocol: 'file:',
-      slashes: true
-    }));
+    win.loadURL('app://' + path.join(appDir, 'index.html').replace(/\\/g, '/'));
   }
 
   win.on('closed', () => { win = null; });
@@ -218,7 +214,18 @@ try {
   app.commandLine.appendSwitch('disable-software-rasterizer');
   remoteMain.initialize();
 
-  app.on('ready', () => setTimeout(createWindow, 400));
+  // Register custom protocol so ES-module scripts load correctly (file:// blocks them via CORS)
+  protocol.registerSchemesAsPrivileged([
+    { scheme: 'app', privileges: { secure: true, standard: true, supportFetchAPI: true } }
+  ]);
+
+  app.on('ready', () => {
+    protocol.registerFileProtocol('app', (request, callback) => {
+      const filePath = decodeURIComponent(request.url.replace('app://', ''));
+      callback({ path: path.normalize(filePath) });
+    });
+    setTimeout(createWindow, 400);
+  });
 
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
