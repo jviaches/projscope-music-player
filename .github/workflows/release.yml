@@ -70,6 +70,31 @@ jobs:
       - name: Upload Linux artifacts
         uses: softprops/action-gh-release@v2
         with:
+          body: |
+            ## What's new in ${{ github.ref_name }}
+
+            ### ✨ New Features
+            - **Streaming support** — Add any HTTP/HTTPS audio stream, direct URL, or RSS/podcast feed to your playlist. A live indicator appears while a stream is playing.
+
+            ### 🐛 Bug Fixes
+            - Fixed blank window on startup in packaged build (ES module CORS issue with `file://`)
+            - Fixed local file playback in packaged build (`media://` protocol for same-origin audio)
+            - Fixed `LIVE` badge showing on regular songs or while paused
+
+            ## Downloads
+
+            ### Windows
+            | File | Description |
+            |------|-------------|
+            | `*-Setup-*-x64.exe` | NSIS installer (recommended) |
+            | `*-*-x64.exe` (portable) | No install needed |
+
+            ### Linux
+            | File | Description |
+            |------|-------------|
+            | `*.AppImage` | Universal — works on any distro |
+            | `*.deb` | Debian / Ubuntu |
+            | `*.rpm` | Fedora / RHEL |
           files: |
             release/*.AppImage
             release/*.deb
