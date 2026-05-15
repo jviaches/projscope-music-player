@@ -145,7 +145,7 @@
       </div>
       <div class="progress-times">
         <span>{{ currentTime$ | async }}</span>
-        <span class="live-badge" *ngIf="isLiveStream">LIVE</span>
+        <span class="live-badge" *ngIf="isLiveStream && isPlaying">LIVE</span>
         <span *ngIf="!isLiveStream">{{ durationTime || '0:00' }}</span>
       </div>
     </div>

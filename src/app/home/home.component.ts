@@ -415,11 +415,19 @@ export class HomeComponent implements OnInit, OnDestroy {
     return h;
   }
 
+  private toAudioSrc(song: Song): string {
+    if (!song?.path) { return ''; }
+    // HTTP/HTTPS streams are used as-is
+    if (/^https?:\/\//i.test(song.path)) { return song.path; }
+    // Local file: convert Windows/POSIX path to a file:// URL
+    return 'file:///' + song.path.replace(/\\/g, '/');
+  }
+
   private resetSong(song: Song) {
     if (!song) { return; }
     this.isLiveStream = false;
     this.durationTime = undefined;
-    this.player.nativeElement.src = song.path;
+    this.player.nativeElement.src = this.toAudioSrc(song);
     this.player.nativeElement.load();
     this.activeSong = song;
     this.isPlaying = false;
