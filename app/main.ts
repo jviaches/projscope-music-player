@@ -7,6 +7,7 @@ import * as http from 'http';
 import * as remoteMain from '@electron/remote/main';
 
 let win: BrowserWindow = null;
+let appBaseDir: string = null;
 
 const args = process.argv.slice(1),
   serve = args.some(val => val === '--serve');
@@ -46,15 +47,15 @@ function createWindow(): BrowserWindow {
     });
     win.loadURL('http://localhost:4200');
   } else {
-    let appDir: string;
     if (fs.existsSync(path.join(__dirname, '../dist/index.html'))) {
       // Running unpacked from project folder (e.g. electron . without serve)
-      appDir = path.join(__dirname, '../dist');
+      appBaseDir = path.join(__dirname, '../dist');
     } else {
       // Packaged build: extraResources copies dist/ → resources/app/
-      appDir = path.join(process.resourcesPath, 'app');
+      appBaseDir = path.join(process.resourcesPath, 'app');
     }
-    win.loadURL('app://' + appDir.replace(/\\/g, '/') + '/index.html');
+    // Use a simple hostname-relative URL so Windows drive letters don't corrupt the URL parser
+    win.loadURL('app://localhost/index.html');
   }
 
   win.on('closed', () => { win = null; });
@@ -225,8 +226,9 @@ try {
 
   app.on('ready', () => {
     protocol.registerFileProtocol('app', (request, callback) => {
-      const filePath = decodeURIComponent(request.url.replace('app://', ''));
-      callback({ path: path.normalize(filePath) });
+      const url = new URL(request.url);
+      const filePath = path.join(appBaseDir, decodeURIComponent(url.pathname));
+      callback({ path: filePath });
     });
     setTimeout(createWindow, 400);
   });
