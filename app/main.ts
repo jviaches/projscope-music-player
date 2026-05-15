@@ -219,9 +219,12 @@ try {
   app.commandLine.appendSwitch('disable-software-rasterizer');
   remoteMain.initialize();
 
-  // Register custom protocol so ES-module scripts load correctly (file:// blocks them via CORS)
+  // Register custom protocols:
+  //  app://   – serves the Angular app bundle (ES modules need a trusted origin, file:// blocks them)
+  //  media:// – serves arbitrary local audio files (file:// is cross-origin from app:// w/ webSecurity on)
   protocol.registerSchemesAsPrivileged([
-    { scheme: 'app', privileges: { secure: true, standard: true, supportFetchAPI: true } }
+    { scheme: 'app',   privileges: { secure: true, standard: true, supportFetchAPI: true } },
+    { scheme: 'media', privileges: { secure: true, standard: true, supportFetchAPI: true, stream: true } }
   ]);
 
   app.on('ready', () => {
@@ -229,6 +232,15 @@ try {
       const url = new URL(request.url);
       const filePath = path.join(appBaseDir, decodeURIComponent(url.pathname));
       callback({ path: filePath });
+    });
+
+    protocol.registerFileProtocol('media', (request, callback) => {
+      const url = new URL(request.url);
+      // pathname is /C:/path/to/file.mp3 on Windows — strip the leading slash
+      const filePath = decodeURIComponent(
+        process.platform === 'win32' ? url.pathname.slice(1) : url.pathname
+      );
+      callback({ path: path.normalize(filePath) });
     });
     setTimeout(createWindow, 400);
   });

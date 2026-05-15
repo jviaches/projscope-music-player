@@ -419,8 +419,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     if (!song?.path) { return ''; }
     // HTTP/HTTPS streams are used as-is
     if (/^https?:\/\//i.test(song.path)) { return song.path; }
-    // Local file: convert Windows/POSIX path to a file:// URL
-    return 'file:///' + song.path.replace(/\\/g, '/');
+    // Local file: serve via media:// custom protocol (file:// is cross-origin from app://)
+    return 'media://localhost/' + song.path.replace(/\\/g, '/');
   }
 
   private resetSong(song: Song) {
